@@ -62,7 +62,15 @@ export default function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {activeTab === 'menu' && (
+        {menuData.loading && (
+          <div className="flex items-center justify-center py-24">
+            <div className="text-center text-gray-500">
+              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p>Cargando datos...</p>
+            </div>
+          </div>
+        )}
+        {!menuData.loading && activeTab === 'menu' && (
           <div className="space-y-6">
             <CategoryManager
               categories={menuData.categories}
@@ -82,7 +90,7 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 'calculator' && (
+        {!menuData.loading && activeTab === 'calculator' && (
           <PriceCalculator
             categories={menuData.categories}
             dishes={menuData.dishes}
@@ -95,7 +103,7 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'preview' && (
+        {!menuData.loading && activeTab === 'preview' && (
           <MenuPreview
             categories={menuData.categories}
             dishes={menuData.dishes}
@@ -103,7 +111,7 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'export' && (
+        {!menuData.loading && activeTab === 'export' && (
           <ExportSection
             categories={menuData.categories}
             dishes={menuData.dishes}
