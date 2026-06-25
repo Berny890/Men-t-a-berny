@@ -1,20 +1,22 @@
 import { useState } from 'react';
-import { UtensilsCrossed, Calculator, Eye, Download, RefreshCw, Trash2 } from 'lucide-react';
+import { UtensilsCrossed, Calculator, Eye, Download, RefreshCw, Trash2, Flame } from 'lucide-react';
 import { useMenuData } from './hooks/useMenuData';
 import { CategoryManager } from './components/CategoryManager';
 import { DishManager } from './components/DishManager';
 import { MenuPreview } from './components/MenuPreview';
 import { PriceCalculator } from './components/PriceCalculator';
 import { ExportSection } from './components/ExportSection';
+import { FixedCostsManager } from './components/FixedCostsManager';
 
-type Tab = 'menu' | 'calculator' | 'preview' | 'export';
+type Tab = 'menu' | 'costos' | 'calculator' | 'preview' | 'export';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('menu');
   const menuData = useMenuData();
 
   const tabs = [
-    { id: 'menu' as Tab, label: 'Gestor de Menú', icon: UtensilsCrossed },
+    { id: 'menu' as Tab, label: 'Menú', icon: UtensilsCrossed },
+    { id: 'costos' as Tab, label: 'Costos Fijos', icon: Flame },
     { id: 'calculator' as Tab, label: 'Calculadora', icon: Calculator },
     { id: 'preview' as Tab, label: 'Vista Previa', icon: Eye },
     { id: 'export' as Tab, label: 'Exportar', icon: Download },
@@ -47,16 +49,13 @@ export default function App() {
               const Icon = tab.icon;
               const active = activeTab === tab.id;
               return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                   className="flex items-center gap-2 px-4 md:px-6 py-4 transition-all whitespace-nowrap text-sm font-medium border-b-4"
                   style={{
                     borderBottomColor: active ? '#8b2635' : 'transparent',
                     color: active ? '#8b2635' : '#7a5c4e',
                     background: active ? '#fdf6ec' : 'transparent',
-                  }}
-                >
+                  }}>
                   <Icon size={18} />
                   <span className="hidden sm:inline">{tab.label}</span>
                   <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
@@ -71,8 +70,9 @@ export default function App() {
       <main className="max-w-5xl mx-auto px-4 py-8">
         {menuData.loading && (
           <div className="flex items-center justify-center py-24">
-            <div className="text-center" style={{ color: '#8b2635' }}>
-              <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderColor: '#8b2635', borderTopColor: 'transparent' }} />
+            <div className="text-center">
+              <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+                style={{ borderColor: '#8b2635', borderTopColor: 'transparent' }} />
               <p style={{ color: '#7a5c4e' }}>Cargando datos...</p>
             </div>
           </div>
@@ -98,10 +98,20 @@ export default function App() {
           </div>
         )}
 
+        {!menuData.loading && activeTab === 'costos' && (
+          <FixedCostsManager
+            fixedCosts={menuData.fixedCosts}
+            onAdd={menuData.addFixedCost}
+            onUpdate={menuData.updateFixedCost}
+            onDelete={menuData.deleteFixedCost}
+          />
+        )}
+
         {!menuData.loading && activeTab === 'calculator' && (
           <PriceCalculator
             categories={menuData.categories}
             dishes={menuData.dishes}
+            fixedCosts={menuData.fixedCosts}
             getDishesByCategory={menuData.getDishesByCategory}
             getDishById={menuData.getDishById}
             onAddIngredient={menuData.addIngredient}
@@ -135,21 +145,15 @@ export default function App() {
             © 2026 · Los datos se guardan en la nube
           </p>
           <div className="flex gap-2">
-            <button
-              onClick={menuData.resetToDefault}
+            <button onClick={menuData.resetToDefault}
               className="px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all hover:opacity-80"
-              style={{ background: '#e8d5c0', color: '#2c1810' }}
-            >
-              <RefreshCw size={13} />
-              Restaurar ejemplo
+              style={{ background: '#e8d5c0', color: '#2c1810' }}>
+              <RefreshCw size={13} /> Restaurar ejemplo
             </button>
-            <button
-              onClick={menuData.clearAllData}
+            <button onClick={menuData.clearAllData}
               className="px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all hover:opacity-80"
-              style={{ background: '#c0392b', color: '#fff' }}
-            >
-              <Trash2 size={13} />
-              Borrar todo
+              style={{ background: '#c0392b', color: '#fff' }}>
+              <Trash2 size={13} /> Borrar todo
             </button>
           </div>
         </div>
