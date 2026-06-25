@@ -2,53 +2,60 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { Category, Dish } from '../hooks/useMenuData';
 
-const MM_TO_PT = 2.83465;
-const PAGE_WIDTH_MM = 105;
-const PAGE_WIDTH = PAGE_WIDTH_MM * MM_TO_PT;
-const MARGIN = 14 * MM_TO_PT;
-const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
+const MM = 2.83465;
+const PW = 105 * MM;          // ancho página
+const MARGIN = 13 * MM;
+const CW = PW - MARGIN * 2;   // ancho contenido
 
-// Calcula la altura total que necesita el contenido
-const calculateContentHeight = (
-  doc: jsPDF,
-  categories: Category[],
-  getDishesByCategory: (id: string) => Dish[]
-): number => {
-  let height = 0;
+// Tamaños de fuente
+const FS_DISH = 8.5;           // nombre plato (más pequeño)
+const FS_DESC = 7.5;           // descripción
+const FS_CAT  = 10;            // categoría
+const FS_MENU = 26;            // MENÚ
+const FS_SUB  = 8.5;           // EMPRENDIMIENTO FAMILIAR
+const FS_POR  = 8;             // porciones
 
-  // Header: EST. 2024 + MENÚ + subtítulo + descripción + línea
-  height += 10 * MM_TO_PT; // top padding
-  height += 6 * MM_TO_PT;  // EST. 2024
-  height += 12 * MM_TO_PT; // MENÚ
-  height += 7 * MM_TO_PT;  // EMPRENDIMIENTO FAMILIAR
-  height += 6 * MM_TO_PT;  // Porciones para 6 personas
-  height += 8 * MM_TO_PT;  // línea separadora + espacio
+const LINE_DISH = 4.2 * MM;   // altura línea nombre plato
+const LINE_DESC = 3.7 * MM;   // altura línea descripción
+const LINE_CAT  = 4.5 * MM;   // altura nombre categoría
 
-  categories.forEach((category) => {
-    const dishes = getDishesByCategory(category.id);
-    if (dishes.length === 0) return;
+const calculateHeight = (doc: jsPDF, categories: Category[], getDishesByCategory: (id: string) => Dish[]): number => {
+  let h = 8 * MM;   // padding top
 
-    height += 8 * MM_TO_PT; // categoría + línea
-    height += 4 * MM_TO_PT; // espacio tras línea
+  // MENÚ
+  h += 10 * MM;
+  // EMPRENDIMIENTO FAMILIAR
+  h += 5 * MM;
+  // Porciones
+  h += 5 * MM;
+  // línea + espacio
+  h += 7 * MM;
+
+  categories.forEach((cat) => {
+    const dishes = getDishesByCategory(cat.id);
+    if (!dishes.length) return;
+
+    h += LINE_CAT;          // nombre categoría
+    h += 1.5 * MM;          // línea
+    h += 4 * MM;            // espacio
 
     dishes.forEach((dish) => {
-      height += 5.5 * MM_TO_PT; // nombre + precio
+      h += LINE_DISH;       // nombre + precio
       if (dish.description) {
-        doc.setFontSize(8);
-        const lines = doc.splitTextToSize(dish.description, CONTENT_WIDTH);
-        height += lines.length * 4 * MM_TO_PT;
+        doc.setFontSize(FS_DESC);
+        const lines = doc.splitTextToSize(dish.description, CW);
+        h += lines.length * LINE_DESC;
       }
-      height += 5 * MM_TO_PT; // separador entre platos
+      h += 3.5 * MM;        // espacio entre platos
     });
 
-    height += 4 * MM_TO_PT; // espacio entre categorías
+    h += 2 * MM;            // espacio entre categorías
   });
 
-  // Footer
-  height += 10 * MM_TO_PT; // línea + ¡BUEN PROVECHO!
-  height += 10 * MM_TO_PT; // padding inferior
+  // footer: línea + texto + padding
+  h += 12 * MM;
 
-  return height;
+  return h;
 };
 
 export const exportMenuToPDF = (
@@ -56,110 +63,92 @@ export const exportMenuToPDF = (
   dishes: Dish[],
   getDishesByCategory: (id: string) => Dish[]
 ) => {
-  // Documento temporal para medir texto
-  const tempDoc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PAGE_WIDTH, 1000] });
-  const contentHeight = calculateContentHeight(tempDoc, categories, getDishesByCategory);
-  const minHeight = 120 * MM_TO_PT;
-  const pageHeight = Math.max(contentHeight, minHeight);
+  const tempDoc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PW, 1000] });
+  const pageHeight = Math.max(calculateHeight(tempDoc, categories, getDishesByCategory), 80 * MM);
 
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'pt',
-    format: [PAGE_WIDTH, pageHeight],
-  });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PW, pageHeight] });
 
-  let y = 10 * MM_TO_PT;
+  let y = 8 * MM;
 
-  // --- HEADER ---
-  // EST. 2024
-  doc.setFont('times', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(80, 80, 80);
-  doc.text('EST. 2024', PAGE_WIDTH / 2, y, { align: 'center' });
-  y += 6 * MM_TO_PT;
-
-  // MENÚ
+  // --- MENÚ ---
   doc.setFont('times', 'bold');
-  doc.setFontSize(28);
+  doc.setFontSize(FS_MENU);
   doc.setTextColor(20, 20, 20);
-  doc.text('MENÚ', PAGE_WIDTH / 2, y, { align: 'center' });
-  y += 10 * MM_TO_PT;
+  doc.text('MENÚ', PW / 2, y, { align: 'center' });
+  y += 6 * MM;
 
   // EMPRENDIMIENTO FAMILIAR
   doc.setFont('times', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(FS_SUB);
   doc.setTextColor(80, 80, 80);
-  doc.text('EMPRENDIMIENTO FAMILIAR', PAGE_WIDTH / 2, y, { align: 'center' });
-  y += 5.5 * MM_TO_PT;
+  doc.text('EMPRENDIMIENTO FAMILIAR', PW / 2, y, { align: 'center' });
+  y += 4.5 * MM;
 
-  // Porciones para 6 personas
+  // Porciones
   doc.setFont('times', 'italic');
-  doc.setFontSize(8.5);
-  doc.setTextColor(100, 100, 100);
-  doc.text('Porciones para 6 personas', PAGE_WIDTH / 2, y, { align: 'center' });
-  y += 6 * MM_TO_PT;
+  doc.setFontSize(FS_POR);
+  doc.setTextColor(110, 110, 110);
+  doc.text('Porciones para 6 personas', PW / 2, y, { align: 'center' });
+  y += 5 * MM;
 
-  // Línea separadora header
+  // Línea separadora
   doc.setDrawColor(30, 30, 30);
   doc.setLineWidth(0.8);
-  doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y);
-  y += 6 * MM_TO_PT;
+  doc.line(MARGIN, y, PW - MARGIN, y);
+  y += 7 * MM;
 
   // --- CATEGORÍAS Y PLATOS ---
-  categories.forEach((category) => {
-    const categoryDishes = getDishesByCategory(category.id);
-    if (categoryDishes.length === 0) return;
+  categories.forEach((cat) => {
+    const catDishes = getDishesByCategory(cat.id);
+    if (!catDishes.length) return;
 
-    // Nombre categoría
     doc.setFont('times', 'bold');
-    doc.setFontSize(11);
+    doc.setFontSize(FS_CAT);
     doc.setTextColor(20, 20, 20);
-    doc.text(category.name.toUpperCase(), MARGIN, y);
-    y += 1.5 * MM_TO_PT;
+    doc.text(cat.name.toUpperCase(), MARGIN, y);
+    y += 1.5 * MM;
 
-    // Línea bajo categoría
     doc.setDrawColor(30, 30, 30);
     doc.setLineWidth(0.4);
-    doc.line(MARGIN, y, PAGE_WIDTH - MARGIN, y);
-    y += 5 * MM_TO_PT;
+    doc.line(MARGIN, y, PW - MARGIN, y);
+    y += 4 * MM;
 
-    categoryDishes.forEach((dish) => {
+    catDishes.forEach((dish) => {
       const price = `$${Number(dish.price).toLocaleString('es-CL')} .-`;
 
-      // Nombre plato
       doc.setFont('times', 'bold');
-      doc.setFontSize(10);
+      doc.setFontSize(FS_DISH);
       doc.setTextColor(20, 20, 20);
       doc.text(dish.name.toUpperCase(), MARGIN, y);
-      doc.text(price, PAGE_WIDTH - MARGIN, y, { align: 'right' });
-      y += 4.5 * MM_TO_PT;
+      doc.text(price, PW - MARGIN, y, { align: 'right' });
+      y += LINE_DISH;
 
-      // Descripción
       if (dish.description) {
         doc.setFont('times', 'italic');
-        doc.setFontSize(8);
+        doc.setFontSize(FS_DESC);
         doc.setTextColor(90, 90, 90);
-        const lines = doc.splitTextToSize(dish.description, CONTENT_WIDTH);
+        const lines = doc.splitTextToSize(dish.description, CW);
         doc.text(lines, MARGIN, y);
-        y += lines.length * 4 * MM_TO_PT;
+        y += lines.length * LINE_DESC;
       }
 
-      y += 4 * MM_TO_PT;
+      y += 3.5 * MM;
     });
 
-    y += 3 * MM_TO_PT;
+    y += 2 * MM;
   });
 
-  // --- FOOTER ---
-  const footerY = pageHeight - 10 * MM_TO_PT;
+  // --- FOOTER (pegado al final del contenido) ---
+  y += 2 * MM;
   doc.setDrawColor(30, 30, 30);
   doc.setLineWidth(0.4);
-  doc.line(MARGIN, footerY - 6 * MM_TO_PT, PAGE_WIDTH - MARGIN, footerY - 6 * MM_TO_PT);
+  doc.line(MARGIN, y, PW - MARGIN, y);
+  y += 5 * MM;
 
   doc.setFont('times', 'bold');
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(20, 20, 20);
-  doc.text('— ¡BUEN PROVECHO! —', PAGE_WIDTH / 2, footerY, { align: 'center' });
+  doc.text('— ¡BUEN PROVECHO! —', PW / 2, y, { align: 'center' });
 
   doc.save('menu-restaurante.pdf');
 };
@@ -167,38 +156,16 @@ export const exportMenuToPDF = (
 export const exportCostSheet = (categories: Category[], dishes: Dish[]) => {
   const data: any[] = [];
 
-  data.push([
-    'Categoría',
-    'Nombre Plato',
-    'Descripción',
-    'Costo Total Ingredientes',
-    'Margen %',
-    'Precio Final',
-  ]);
+  data.push(['Categoría', 'Nombre Plato', 'Descripción', 'Costo Total Ingredientes', 'Margen %', 'Precio Final']);
 
   dishes.forEach((dish) => {
     const category = categories.find((c) => c.id === dish.categoryId);
     const totalCost = dish.ingredients.reduce((sum, ing) => sum + ing.subtotal, 0);
-
-    data.push([
-      category?.name || 'Sin categoría',
-      dish.name,
-      dish.description,
-      totalCost.toFixed(2),
-      dish.margin,
-      dish.price.toFixed(2),
-    ]);
+    data.push([category?.name || 'Sin categoría', dish.name, dish.description, totalCost.toFixed(2), dish.margin, dish.price.toFixed(2)]);
   });
 
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [
-    { wch: 20 },
-    { wch: 25 },
-    { wch: 40 },
-    { wch: 20 },
-    { wch: 12 },
-    { wch: 15 },
-  ];
+  ws['!cols'] = [{ wch: 20 }, { wch: 25 }, { wch: 40 }, { wch: 20 }, { wch: 12 }, { wch: 15 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Planilla de Costos');

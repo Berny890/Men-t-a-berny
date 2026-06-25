@@ -19,21 +19,19 @@ export const MenuPreview = ({ categories, dishes, getDishesByCategory }: MenuPre
           width: '380px',
           fontFamily: 'Georgia, "Times New Roman", Times, serif',
           border: '1px solid #ddd',
-          padding: '28px 24px',
+          padding: '22px 22px',
+          display: 'inline-block',
         }}
       >
         {/* Header */}
-        <div className="text-center" style={{ marginBottom: '16px' }}>
-          <p style={{ fontSize: '9px', color: '#666', letterSpacing: '2px', marginBottom: '2px' }}>
-            EST. 2024
-          </p>
-          <h1 style={{ fontSize: '32px', fontWeight: 'bold', letterSpacing: '4px', margin: '0 0 4px' }}>
+        <div className="text-center" style={{ marginBottom: '14px' }}>
+          <h1 style={{ fontSize: '30px', fontWeight: 'bold', letterSpacing: '4px', margin: '0 0 3px' }}>
             MENÚ
           </h1>
-          <p style={{ fontSize: '10px', letterSpacing: '3px', color: '#555', marginBottom: '4px' }}>
+          <p style={{ fontSize: '9.5px', letterSpacing: '3px', color: '#555', marginBottom: '3px' }}>
             EMPRENDIMIENTO FAMILIAR
           </p>
-          <p style={{ fontSize: '9px', fontStyle: 'italic', color: '#777' }}>
+          <p style={{ fontSize: '8.5px', fontStyle: 'italic', color: '#777' }}>
             Porciones para 6 personas
           </p>
         </div>
@@ -64,29 +62,16 @@ export const MenuPreview = ({ categories, dishes, getDishesByCategory }: MenuPre
 
                   {categoryDishes.map((dish) => (
                     <div key={dish.id} style={{ marginBottom: '10px' }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'baseline',
-                        }}
-                      >
-                        <span style={{ fontSize: '10px', fontWeight: 'bold' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        <span style={{ fontSize: '8.5px', fontWeight: 'bold' }}>
                           {dish.name.toUpperCase()}
                         </span>
-                        <span
-                          style={{
-                            fontSize: '10px',
-                            fontWeight: 'bold',
-                            whiteSpace: 'nowrap',
-                            marginLeft: '8px',
-                          }}
-                        >
+                        <span style={{ fontSize: '8.5px', fontWeight: 'bold', whiteSpace: 'nowrap', marginLeft: '8px' }}>
                           ${Number(dish.price).toLocaleString('es-CL')} .-
                         </span>
                       </div>
                       {dish.description && (
-                        <p style={{ fontSize: '8px', fontStyle: 'italic', color: '#666', margin: '2px 0 0' }}>
+                        <p style={{ fontSize: '7.5px', fontStyle: 'italic', color: '#666', margin: '1px 0 0' }}>
                           {dish.description}
                         </p>
                       )}
