@@ -19,8 +19,8 @@ const LINE_DISH = 4.2 * MM;   // altura línea nombre plato
 const LINE_DESC = 3.7 * MM;   // altura línea descripción
 const LINE_CAT  = 4.5 * MM;   // altura nombre categoría
 
-const calculateHeight = (doc: jsPDF, categories: Category[], getDishesByCategory: (id: string) => Dish[]): number => {
-  let h = 8 * MM;   // padding top
+const calculateHeight = (doc: jsPDF, categories: Category[], getDishesByCategory: (id: string) => Dish[], deliveryDate: string | null): number => {
+  let h = 14 * MM;  // padding top generoso
 
   // MENÚ
   h += 10 * MM;
@@ -52,23 +52,31 @@ const calculateHeight = (doc: jsPDF, categories: Category[], getDishesByCategory
     h += 2 * MM;            // espacio entre categorías
   });
 
-  // footer: línea + texto + padding
+  // footer: línea + texto + fecha (opcional) + padding
   h += 12 * MM;
+  if (deliveryDate) h += 6 * MM;
 
   return h;
+};
+
+const formatDateLong = (dateStr: string): string => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 };
 
 export const exportMenuToPDF = (
   categories: Category[],
   dishes: Dish[],
-  getDishesByCategory: (id: string) => Dish[]
+  getDishesByCategory: (id: string) => Dish[],
+  deliveryDate: string | null = null
 ) => {
   const tempDoc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PW, 1000] });
-  const pageHeight = Math.max(calculateHeight(tempDoc, categories, getDishesByCategory), 80 * MM);
+  const pageHeight = Math.max(calculateHeight(tempDoc, categories, getDishesByCategory, deliveryDate), 80 * MM);
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PW, pageHeight] });
 
-  let y = 8 * MM;
+  let y = 14 * MM;
 
   // --- MENÚ ---
   doc.setFont('times', 'bold');
@@ -138,7 +146,7 @@ export const exportMenuToPDF = (
     y += 2 * MM;
   });
 
-  // --- FOOTER (pegado al final del contenido) ---
+  // --- FOOTER ---
   y += 2 * MM;
   doc.setDrawColor(30, 30, 30);
   doc.setLineWidth(0.4);
@@ -149,6 +157,16 @@ export const exportMenuToPDF = (
   doc.setFontSize(9);
   doc.setTextColor(20, 20, 20);
   doc.text('— ¡BUEN PROVECHO! —', PW / 2, y, { align: 'center' });
+
+  // Fecha de reparto
+  if (deliveryDate) {
+    y += 5.5 * MM;
+    doc.setFont('times', 'italic');
+    doc.setFontSize(8);
+    doc.setTextColor(90, 90, 90);
+    const label = `Reparto: ${formatDateLong(deliveryDate)}`;
+    doc.text(label, PW / 2, y, { align: 'center' });
+  }
 
   doc.save('menu-restaurante.pdf');
 };
