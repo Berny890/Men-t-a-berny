@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, Calculator, Eye, Download, RefreshCw, Trash } from 'lucide-react';
+import { UtensilsCrossed, Calculator, Eye, Download, RefreshCw, Trash2 } from 'lucide-react';
 import { useMenuData } from './hooks/useMenuData';
 import { CategoryManager } from './components/CategoryManager';
 import { DishManager } from './components/DishManager';
@@ -14,43 +14,50 @@ export default function App() {
   const menuData = useMenuData();
 
   const tabs = [
-    { id: 'menu' as Tab, label: 'Gestor de Menú', icon: Menu },
-    { id: 'calculator' as Tab, label: 'Calculadora de Precios', icon: Calculator },
+    { id: 'menu' as Tab, label: 'Gestor de Menú', icon: UtensilsCrossed },
+    { id: 'calculator' as Tab, label: 'Calculadora', icon: Calculator },
     { id: 'preview' as Tab, label: 'Vista Previa', icon: Eye },
-    { id: 'export' as Tab, label: 'Exportación', icon: Download },
+    { id: 'export' as Tab, label: 'Exportar', icon: Download },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen" style={{ background: '#fdf6ec' }}>
+
       {/* Header */}
-      <header className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-4 md:py-6">
-          <h1 className="text-xl md:text-3xl text-center text-gray-800">
-            Sistema de Gestión de Menú de Restaurante
-          </h1>
-          <p className="text-center text-gray-600 mt-1 md:mt-2 text-sm md:text-base">
-            Emprendimiento Familiar
-          </p>
+      <header style={{ background: '#8b2635' }} className="shadow-lg">
+        <div className="max-w-5xl mx-auto px-4 py-5 flex items-center justify-center gap-3">
+          <UtensilsCrossed size={28} color="#f5e6d3" />
+          <div className="text-center">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-wide" style={{ color: '#fdf6ec', fontFamily: 'Georgia, serif' }}>
+              Gestión de Menú
+            </h1>
+            <p className="text-xs tracking-widest uppercase" style={{ color: '#e8c8ae' }}>
+              Emprendimiento Familiar
+            </p>
+          </div>
+          <UtensilsCrossed size={28} color="#f5e6d3" className="scale-x-[-1]" />
         </div>
       </header>
 
-      {/* Tabs Navigation */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-2 md:px-4">
+      {/* Tabs */}
+      <div className="sticky top-0 z-10 shadow-sm" style={{ background: '#fffaf3', borderBottom: '2px solid #e8d5c0' }}>
+        <div className="max-w-5xl mx-auto px-2 md:px-4">
           <div className="flex overflow-x-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon;
+              const active = activeTab === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-3 md:px-6 py-3 md:py-4 border-b-4 transition-colors whitespace-nowrap text-sm md:text-base ${
-                    activeTab === tab.id
-                      ? 'border-blue-600 text-blue-600 bg-blue-50'
-                      : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-                  }`}
+                  className="flex items-center gap-2 px-4 md:px-6 py-4 transition-all whitespace-nowrap text-sm font-medium border-b-4"
+                  style={{
+                    borderBottomColor: active ? '#8b2635' : 'transparent',
+                    color: active ? '#8b2635' : '#7a5c4e',
+                    background: active ? '#fdf6ec' : 'transparent',
+                  }}
                 >
-                  <Icon size={20} />
+                  <Icon size={18} />
                   <span className="hidden sm:inline">{tab.label}</span>
                   <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
                 </button>
@@ -60,16 +67,17 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      {/* Content */}
+      <main className="max-w-5xl mx-auto px-4 py-8">
         {menuData.loading && (
           <div className="flex items-center justify-center py-24">
-            <div className="text-center text-gray-500">
-              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p>Cargando datos...</p>
+            <div className="text-center" style={{ color: '#8b2635' }}>
+              <div className="w-10 h-10 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderColor: '#8b2635', borderTopColor: 'transparent' }} />
+              <p style={{ color: '#7a5c4e' }}>Cargando datos...</p>
             </div>
           </div>
         )}
+
         {!menuData.loading && activeTab === 'menu' && (
           <div className="space-y-6">
             <CategoryManager
@@ -121,30 +129,28 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-600 text-center md:text-left text-xs md:text-sm">
-              Sistema de Gestión de Menú © 2026 - Todos los datos se guardan localmente en su navegador
-            </p>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <button
-                onClick={menuData.resetToDefault}
-                className="px-3 md:px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 flex items-center justify-center gap-2 text-xs md:text-sm"
-                title="Volver a datos de ejemplo"
-              >
-                <RefreshCw size={14} />
-                <span>Restaurar Ejemplo</span>
-              </button>
-              <button
-                onClick={menuData.clearAllData}
-                className="px-3 md:px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 flex items-center justify-center gap-2 text-xs md:text-sm"
-                title="Eliminar todos los datos"
-              >
-                <Trash size={14} />
-                <span>Borrar Todo</span>
-              </button>
-            </div>
+      <footer style={{ background: '#fffaf3', borderTop: '2px solid #e8d5c0' }} className="mt-12">
+        <div className="max-w-5xl mx-auto px-4 py-5 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p className="text-xs text-center md:text-left" style={{ color: '#7a5c4e' }}>
+            © 2026 · Los datos se guardan en la nube
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={menuData.resetToDefault}
+              className="px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all hover:opacity-80"
+              style={{ background: '#e8d5c0', color: '#2c1810' }}
+            >
+              <RefreshCw size={13} />
+              Restaurar ejemplo
+            </button>
+            <button
+              onClick={menuData.clearAllData}
+              className="px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all hover:opacity-80"
+              style={{ background: '#c0392b', color: '#fff' }}
+            >
+              <Trash2 size={13} />
+              Borrar todo
+            </button>
           </div>
         </div>
       </footer>

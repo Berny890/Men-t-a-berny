@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, UtensilsCrossed } from 'lucide-react';
 import { Category, Dish } from '../hooks/useMenuData';
 import { formatCLP } from '../utils/formatCLP';
 
@@ -12,24 +12,14 @@ interface DishManagerProps {
   getDishesByCategory: (categoryId: string) => Dish[];
 }
 
-export const DishManager = ({
-  categories,
-  onAdd,
-  onUpdate,
-  onDelete,
-  getDishesByCategory,
-}: DishManagerProps) => {
+export const DishManager = ({ categories, onAdd, onUpdate, onDelete, getDishesByCategory }: DishManagerProps) => {
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
-  const [newDish, setNewDish] = useState({
-    name: '',
-    description: '',
-    price: '',
-  });
+  const [newDish, setNewDish] = useState({ name: '', description: '', price: '' });
   const [editingDish, setEditingDish] = useState<Dish | null>(null);
 
   const handleAdd = () => {
     if (selectedCategoryId && newDish.name.trim() && newDish.description.trim() && newDish.price) {
-      const price = parseFloat(newDish.price);
+      const price = parseInt(newDish.price);
       if (price >= 0) {
         onAdd(selectedCategoryId, newDish.name.trim(), newDish.description.trim(), price);
         setNewDish({ name: '', description: '', price: '' });
@@ -37,176 +27,137 @@ export const DishManager = ({
     }
   };
 
-  const handleEdit = (dish: Dish) => {
-    setEditingDish({ ...dish });
-  };
-
-  const handleSaveEdit = () => {
-    if (editingDish && editingDish.name.trim() && editingDish.description.trim()) {
-      onUpdate(editingDish.id, {
-        name: editingDish.name.trim(),
-        description: editingDish.description.trim(),
-        price: editingDish.price,
-      });
-      setEditingDish(null);
-    }
-  };
-
   const handleDelete = (id: string, name: string) => {
-    if (confirm(`¿Está seguro de eliminar el plato "${name}"?`)) {
-      onDelete(id);
-    }
+    if (confirm(`¿Eliminar el plato "${name}"?`)) onDelete(id);
   };
 
   const selectedDishes = selectedCategoryId ? getDishesByCategory(selectedCategoryId) : [];
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <h2 className="text-xl mb-4">Gestión de Platos</h2>
-
-      {/* Selector de categoría */}
-      <div className="mb-6">
-        <label className="block mb-2 text-sm">Seleccionar Categoría</label>
-        <select
-          value={selectedCategoryId}
-          onChange={(e) => setSelectedCategoryId(e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">-- Seleccione una categoría --</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+    <div className="rounded-2xl shadow-sm overflow-hidden" style={{ background: '#fffaf3', border: '1px solid #e8d5c0' }}>
+      <div className="px-6 py-4 flex items-center gap-2" style={{ background: '#f5e6d3', borderBottom: '1px solid #e8d5c0' }}>
+        <UtensilsCrossed size={18} style={{ color: '#8b2635' }} />
+        <h2 className="font-semibold" style={{ color: '#2c1810' }}>Platos</h2>
       </div>
 
-      {selectedCategoryId && (
-        <>
-          {/* Crear plato */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="mb-3">Crear Nuevo Plato</h3>
-            <div className="grid gap-3 mb-3">
-              <input
-                type="text"
-                value={newDish.name}
-                onChange={(e) => setNewDish({ ...newDish, name: e.target.value })}
-                placeholder="Nombre del plato"
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="text"
-                value={newDish.description}
-                onChange={(e) => setNewDish({ ...newDish, description: e.target.value })}
-                placeholder="Descripción"
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <input
-                type="number"
-                step="100"
-                min="0"
-                value={newDish.price}
-                onChange={(e) => setNewDish({ ...newDish, price: e.target.value })}
-                placeholder="Precio (ej: 15000)"
-                className="px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <button
-              onClick={handleAdd}
-              className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2"
-            >
-              <Plus size={20} />
-              Crear Plato
-            </button>
-          </div>
+      <div className="p-6">
+        {/* Selector categoría */}
+        <div className="mb-5">
+          <label className="block text-xs font-medium mb-1.5" style={{ color: '#7a5c4e' }}>Categoría</label>
+          <select
+            value={selectedCategoryId}
+            onChange={(e) => setSelectedCategoryId(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+            style={{ background: '#fdf6ec', border: '1.5px solid #e8d5c0', color: '#2c1810' }}
+          >
+            <option value="">-- Selecciona una categoría --</option>
+            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
 
-          {/* Lista de platos */}
-          <div className="space-y-3">
-            <h3 className="mb-2">Platos en esta categoría</h3>
-            {selectedDishes.map((dish) => (
-              <div
-                key={dish.id}
-                className="p-4 bg-gray-50 rounded-lg"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="flex-1">
-                    <h4>{dish.name}</h4>
-                    <p className="text-sm text-gray-600">{dish.description}</p>
-                    <p className="mt-1 text-blue-600">{formatCLP(dish.price)} .-</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(dish)}
-                      className="px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center gap-1 text-sm"
-                    >
-                      <Pencil size={14} />
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(dish.id, dish.name)}
-                      className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 flex items-center gap-1 text-sm"
-                    >
-                      <Trash2 size={14} />
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
+        {selectedCategoryId && (
+          <>
+            {/* Formulario nuevo plato */}
+            <div className="p-4 rounded-xl mb-5" style={{ background: '#fdf6ec', border: '1px solid #e8d5c0' }}>
+              <h3 className="text-sm font-semibold mb-3" style={{ color: '#8b2635' }}>Nuevo plato</h3>
+              <div className="grid gap-2.5 mb-3">
+                <input type="text" value={newDish.name}
+                  onChange={(e) => setNewDish({ ...newDish, name: e.target.value })}
+                  placeholder="Nombre del plato"
+                  className="px-4 py-2.5 rounded-xl text-sm outline-none"
+                  style={{ background: '#fffaf3', border: '1.5px solid #e8d5c0', color: '#2c1810' }} />
+                <input type="text" value={newDish.description}
+                  onChange={(e) => setNewDish({ ...newDish, description: e.target.value })}
+                  placeholder="Descripción"
+                  className="px-4 py-2.5 rounded-xl text-sm outline-none"
+                  style={{ background: '#fffaf3', border: '1.5px solid #e8d5c0', color: '#2c1810' }} />
+                <input type="number" step="100" min="0" value={newDish.price}
+                  onChange={(e) => setNewDish({ ...newDish, price: e.target.value })}
+                  placeholder="Precio (ej: 15000)"
+                  className="px-4 py-2.5 rounded-xl text-sm outline-none"
+                  style={{ background: '#fffaf3', border: '1.5px solid #e8d5c0', color: '#2c1810' }} />
               </div>
-            ))}
-            {selectedDishes.length === 0 && (
-              <p className="text-gray-500 text-center py-4">No hay platos en esta categoría</p>
-            )}
-          </div>
-        </>
-      )}
+              <button onClick={handleAdd}
+                className="w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all hover:opacity-90"
+                style={{ background: '#8b2635', color: '#fff' }}>
+                <Plus size={16} /> Agregar plato
+              </button>
+            </div>
 
-      {/* Modal de edición */}
+            {/* Lista platos */}
+            <div className="space-y-2">
+              {selectedDishes.map((dish) => (
+                <div key={dish.id} className="flex items-center gap-3 px-4 py-3 rounded-xl"
+                  style={{ background: '#fdf6ec', border: '1px solid #e8d5c0' }}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: '#2c1810' }}>{dish.name}</p>
+                    <p className="text-xs truncate" style={{ color: '#7a5c4e' }}>{dish.description}</p>
+                    <p className="text-sm font-bold mt-0.5" style={{ color: '#8b2635' }}>{formatCLP(dish.price)} .-</p>
+                  </div>
+                  <button onClick={() => setEditingDish({ ...dish })}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 shrink-0 transition-all hover:opacity-80"
+                    style={{ background: '#e8d5c0', color: '#2c1810' }}>
+                    <Pencil size={12} /> Editar
+                  </button>
+                  <button onClick={() => handleDelete(dish.id, dish.name)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 shrink-0 transition-all hover:opacity-80"
+                    style={{ background: '#8b2635', color: '#fff' }}>
+                    <Trash2 size={12} /> Eliminar
+                  </button>
+                </div>
+              ))}
+              {selectedDishes.length === 0 && (
+                <p className="text-center py-6 text-sm" style={{ color: '#7a5c4e' }}>
+                  No hay platos en esta categoría
+                </p>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Modal edición */}
       {editingDish && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 className="text-lg mb-4">Editar Plato</h3>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+          <div className="rounded-2xl shadow-xl p-6 w-full max-w-sm" style={{ background: '#fffaf3', border: '1px solid #e8d5c0' }}>
+            <h3 className="font-semibold mb-4" style={{ color: '#2c1810' }}>Editar plato</h3>
             <div className="grid gap-3 mb-4">
               <div>
-                <label className="block text-sm mb-1">Nombre</label>
-                <input
-                  type="text"
-                  value={editingDish.name}
+                <label className="block text-xs mb-1" style={{ color: '#7a5c4e' }}>Nombre</label>
+                <input type="text" value={editingDish.name}
                   onChange={(e) => setEditingDish({ ...editingDish, name: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                  style={{ background: '#fdf6ec', border: '1.5px solid #e8d5c0', color: '#2c1810' }} />
               </div>
               <div>
-                <label className="block text-sm mb-1">Descripción</label>
-                <input
-                  type="text"
-                  value={editingDish.description}
+                <label className="block text-xs mb-1" style={{ color: '#7a5c4e' }}>Descripción</label>
+                <input type="text" value={editingDish.description}
                   onChange={(e) => setEditingDish({ ...editingDish, description: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                  style={{ background: '#fdf6ec', border: '1.5px solid #e8d5c0', color: '#2c1810' }} />
               </div>
               <div>
-                <label className="block text-sm mb-1">Precio</label>
-                <input
-                  type="number"
-                  step="100"
-                  min="0"
-                  value={editingDish.price}
+                <label className="block text-xs mb-1" style={{ color: '#7a5c4e' }}>Precio</label>
+                <input type="number" step="100" min="0" value={editingDish.price}
                   onChange={(e) => setEditingDish({ ...editingDish, price: parseInt(e.target.value) || 0 })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                  className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                  style={{ background: '#fdf6ec', border: '1.5px solid #e8d5c0', color: '#2c1810' }} />
               </div>
             </div>
             <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setEditingDish(null)}
-                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
-              >
+              <button onClick={() => setEditingDish(null)}
+                className="px-4 py-2 rounded-xl text-sm transition-all hover:opacity-80"
+                style={{ background: '#e8d5c0', color: '#2c1810' }}>
                 Cancelar
               </button>
-              <button
-                onClick={handleSaveEdit}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
+              <button onClick={() => {
+                if (editingDish.name.trim() && editingDish.description.trim()) {
+                  onUpdate(editingDish.id, { name: editingDish.name.trim(), description: editingDish.description.trim(), price: editingDish.price });
+                  setEditingDish(null);
+                }
+              }}
+                className="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:opacity-90"
+                style={{ background: '#8b2635', color: '#fff' }}>
                 Guardar
               </button>
             </div>
