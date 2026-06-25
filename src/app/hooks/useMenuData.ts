@@ -19,11 +19,13 @@ export interface Dish {
   margin: number;
   deliveryCost: number;
   monthlyBatches: number;
+  sortOrder: number;
 }
 
 export interface Category {
   id: string;
   name: string;
+  sortOrder: number;
 }
 
 export interface FixedCost {
@@ -45,9 +47,9 @@ const createDefaultData = (): MenuData => {
 
   return {
     categories: [
-      { id: entradaId, name: 'ENTRADAS' },
-      { id: principalId, name: 'PLATOS PRINCIPALES' },
-      { id: postreId, name: 'POSTRES' },
+      { id: entradaId, name: 'ENTRADAS', sortOrder: 0 },
+      { id: principalId, name: 'PLATOS PRINCIPALES', sortOrder: 1 },
+      { id: postreId, name: 'POSTRES', sortOrder: 2 },
     ],
     dishes: [
       {
@@ -60,7 +62,7 @@ const createDefaultData = (): MenuData => {
           { id: '1002', name: 'Pan para crutones', quantity: '1 bolsa', unitPrice: 600, subtotal: 600 },
           { id: '1003', name: 'Queso parmesano', quantity: '200g', unitPrice: 1200, subtotal: 1200 },
         ],
-        margin: 30, deliveryCost: 0, monthlyBatches: 0,
+        margin: 30, deliveryCost: 0, monthlyBatches: 0, sortOrder: 0,
       },
       {
         id: '201', categoryId: principalId,
@@ -72,14 +74,14 @@ const createDefaultData = (): MenuData => {
           { id: '2002', name: 'Carne molida', quantity: '1kg', unitPrice: 3500, subtotal: 3500 },
           { id: '2003', name: 'Queso mozzarella', quantity: '300g', unitPrice: 1800, subtotal: 1800 },
         ],
-        margin: 30, deliveryCost: 0, monthlyBatches: 0,
+        margin: 30, deliveryCost: 0, monthlyBatches: 0, sortOrder: 1,
       },
       {
         id: '301', categoryId: postreId,
         name: 'Tiramisú',
         description: 'Delicioso postre italiano con café, mascarpone y cacao',
         price: 3000, ingredients: [],
-        margin: 30, deliveryCost: 0, monthlyBatches: 0,
+        margin: 30, deliveryCost: 0, monthlyBatches: 0, sortOrder: 0,
       },
     ],
     fixedCosts: [],
@@ -95,8 +97,8 @@ export const useMenuData = () => {
   const loadAll = useCallback(async () => {
     setLoading(true);
     const [{ data: cats }, { data: dishRows }, { data: ingRows }, { data: fcRows }] = await Promise.all([
-      supabase.from('categories').select('*').order('created_at'),
-      supabase.from('dishes').select('*').order('created_at'),
+      supabase.from('categories').select('*').order('sort_order').order('created_at'),
+      supabase.from('dishes').select('*').order('sort_order').order('created_at'),
       supabase.from('ingredients').select('*').order('created_at'),
       supabase.from('fixed_costs').select('*').order('created_at'),
     ]);
@@ -110,6 +112,7 @@ export const useMenuData = () => {
       margin: d.margin,
       deliveryCost: d.delivery_cost,
       monthlyBatches: d.monthly_batches ?? 0,
+      sortOrder: d.sort_order ?? 0,
       ingredients: (ingRows || [])
         .filter((i) => i.dish_id === d.id)
         .map((i) => ({
@@ -118,7 +121,7 @@ export const useMenuData = () => {
         })),
     }));
 
-    setCategories((cats || []).map((c) => ({ id: c.id, name: c.name })));
+    setCategories((cats || []).map((c) => ({ id: c.id, name: c.name, sortOrder: c.sort_order ?? 0 })));
     setDishes(assembled);
     setFixedCosts((fcRows || []).map((f) => ({ id: f.id, name: f.name, amount: f.amount })));
     setLoading(false);
@@ -126,11 +129,71 @@ export const useMenuData = () => {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  // --- Reordenar ---
+  const reorderCategories = async (ordered: Category[]) => {
+    setCategories(ordered);
+    await Promise.all(
+      ordered.map((c, i) => supabase.from('categories').update({ sort_order: i }).eq('id', c.id))
+    );
+  };
+
+  const reorderDishes = async (categoryId: string, ordered: Dish[]) => {
+    setDishes((prev) => {
+      const others = prev.filter((d) => d.categoryId !== categoryId);
+      return [...others, ...ordered];
+    });
+    await Promise.all(
+      ordered.map((d, i) => supabase.from('dishes').update({ sort_order: i }).eq('id', d.id))
+    );
+  };
+
+  // --- Duplicar plato ---
+  const duplicateDish = async (dishId: string) => {
+    const original = dishes.find((d) => d.id === dishId);
+    if (!original) return;
+    const newId = Date.now().toString();
+    const catDishes = dishes.filter((d) => d.categoryId === original.categoryId);
+    const newSortOrder = catDishes.length;
+    const copy: Dish = {
+      ...original,
+      id: newId,
+      name: `${original.name} (Copia)`,
+      ingredients: [],
+      sortOrder: newSortOrder,
+    };
+    setDishes((prev) => [...prev, copy]);
+    await supabase.from('dishes').insert({
+      id: newId,
+      category_id: copy.categoryId,
+      name: copy.name,
+      description: copy.description,
+      price: copy.price,
+      margin: copy.margin,
+      delivery_cost: copy.deliveryCost,
+      monthly_batches: copy.monthlyBatches,
+      sort_order: newSortOrder,
+    });
+    // Duplicar ingredientes
+    for (const ing of original.ingredients) {
+      const ingId = (Date.now() + Math.random()).toString();
+      const newIng = { ...ing, id: ingId };
+      setDishes((prev) => prev.map((d) =>
+        d.id === newId ? { ...d, ingredients: [...d.ingredients, newIng] } : d
+      ));
+      await supabase.from('ingredients').insert({
+        id: ingId, dish_id: newId,
+        name: ing.name, quantity: ing.quantity,
+        unit_price: ing.unitPrice, subtotal: ing.subtotal,
+      });
+    }
+  };
+
   // --- Categorías ---
   const addCategory = async (name: string) => {
     const id = Date.now().toString();
-    setCategories((prev) => [...prev, { id, name }]);
-    await supabase.from('categories').insert({ id, name });
+    const sortOrder = categories.length;
+    setCategories((prev) => [...prev, { id, name, sortOrder }]);
+    await supabase.from('categories').insert({ id, name, sort_order: sortOrder });
   };
 
   const updateCategory = async (id: string, name: string) => {
@@ -147,9 +210,10 @@ export const useMenuData = () => {
   // --- Platos ---
   const addDish = async (categoryId: string, name: string, description: string, price: number) => {
     const id = Date.now().toString();
-    const newDish: Dish = { id, categoryId, name, description, price, ingredients: [], margin: 30, deliveryCost: 0, monthlyBatches: 0 };
+    const sortOrder = dishes.filter((d) => d.categoryId === categoryId).length;
+    const newDish: Dish = { id, categoryId, name, description, price, ingredients: [], margin: 30, deliveryCost: 0, monthlyBatches: 0, sortOrder };
     setDishes((prev) => [...prev, newDish]);
-    await supabase.from('dishes').insert({ id, category_id: categoryId, name, description, price, margin: 30, delivery_cost: 0, monthly_batches: 0 });
+    await supabase.from('dishes').insert({ id, category_id: categoryId, name, description, price, margin: 30, delivery_cost: 0, monthly_batches: 0, sort_order: sortOrder });
     return newDish;
   };
 
@@ -255,6 +319,7 @@ export const useMenuData = () => {
     addIngredient, updateIngredient, deleteIngredient,
     addFixedCost, updateFixedCost, deleteFixedCost,
     getDishById, getDishesByCategory,
+    reorderCategories, reorderDishes, duplicateDish,
     resetToDefault, clearAllData,
   };
 };

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UtensilsCrossed, Calculator, Eye, Download, RefreshCw, Trash2, Flame } from 'lucide-react';
+import { UtensilsCrossed, Calculator, Eye, Download, RefreshCw, Flame } from 'lucide-react';
 import { useMenuData } from './hooks/useMenuData';
 import { MenuManager } from './components/MenuManager';
 import { MenuPreview } from './components/MenuPreview';
@@ -85,7 +85,10 @@ export default function App() {
             onAddDish={menuData.addDish}
             onUpdateDish={menuData.updateDish}
             onDeleteDish={menuData.deleteDish}
+            onDuplicateDish={menuData.duplicateDish}
             getDishesByCategory={menuData.getDishesByCategory}
+            onReorderCategories={menuData.reorderCategories}
+            onReorderDishes={menuData.reorderDishes}
           />
         )}
 
@@ -135,18 +138,13 @@ export default function App() {
           <p className="text-xs text-center md:text-left" style={{ color: '#7a5c4e' }}>
             © 2026 · Los datos se guardan en la nube
           </p>
-          <div className="flex gap-2">
+          {activeTab !== 'menu' && (
             <button onClick={menuData.resetToDefault}
               className="px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all hover:opacity-80"
               style={{ background: '#e8d5c0', color: '#2c1810' }}>
               <RefreshCw size={13} /> Restaurar ejemplo
             </button>
-            <button onClick={menuData.clearAllData}
-              className="px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all hover:opacity-80"
-              style={{ background: '#c0392b', color: '#fff' }}>
-              <Trash2 size={13} /> Borrar todo
-            </button>
-          </div>
+          )}
         </div>
       </footer>
     </div>
