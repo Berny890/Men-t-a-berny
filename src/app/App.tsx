@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { UtensilsCrossed, Calculator, Eye, Download, RefreshCw, Trash2, Flame } from 'lucide-react';
 import { useMenuData } from './hooks/useMenuData';
-import { CategoryManager } from './components/CategoryManager';
-import { DishManager } from './components/DishManager';
+import { MenuManager } from './components/MenuManager';
 import { MenuPreview } from './components/MenuPreview';
 import { PriceCalculator } from './components/PriceCalculator';
 import { ExportSection } from './components/ExportSection';
@@ -79,23 +78,17 @@ export default function App() {
         )}
 
         {!menuData.loading && activeTab === 'menu' && (
-          <div className="space-y-6">
-            <CategoryManager
-              categories={menuData.categories}
-              onAdd={menuData.addCategory}
-              onUpdate={menuData.updateCategory}
-              onDelete={menuData.deleteCategory}
-              getDishesByCategory={menuData.getDishesByCategory}
-            />
-            <DishManager
-              categories={menuData.categories}
-              dishes={menuData.dishes}
-              onAdd={menuData.addDish}
-              onUpdate={menuData.updateDish}
-              onDelete={menuData.deleteDish}
-              getDishesByCategory={menuData.getDishesByCategory}
-            />
-          </div>
+          <MenuManager
+            categories={menuData.categories}
+            dishes={menuData.dishes}
+            onAddCategory={menuData.addCategory}
+            onUpdateCategory={menuData.updateCategory}
+            onDeleteCategory={menuData.deleteCategory}
+            onAddDish={menuData.addDish}
+            onUpdateDish={menuData.updateDish}
+            onDeleteDish={menuData.deleteDish}
+            getDishesByCategory={menuData.getDishesByCategory}
+          />
         )}
 
         {!menuData.loading && activeTab === 'costos' && (
