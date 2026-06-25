@@ -27,7 +27,6 @@ export default function App() {
       {/* Header */}
       <header style={{ background: '#8b2635' }} className="shadow-lg">
         <div className="max-w-5xl mx-auto px-4 py-5 flex items-center justify-center gap-3">
-          <UtensilsCrossed size={28} color="#f5e6d3" />
           <div className="text-center">
             <h1 className="text-2xl md:text-3xl font-bold tracking-wide" style={{ color: '#fdf6ec', fontFamily: 'Georgia, serif' }}>
               Gestión de Menú
@@ -36,7 +35,6 @@ export default function App() {
               Emprendimiento Familiar
             </p>
           </div>
-          <UtensilsCrossed size={28} color="#f5e6d3" className="scale-x-[-1]" />
         </div>
       </header>
 

@@ -219,7 +219,7 @@ export const ExportSection = ({ categories, dishes, getDishesByCategory }: Expor
             <div className="px-6 pb-2 min-h-[36px] text-center">
               {deliveryDate ? (
                 <p className="text-sm font-semibold capitalize" style={{ color: '#8b2635' }}>
-                  📅 {formatDateLong(deliveryDate)}
+                  {formatDateLong(deliveryDate)}
                 </p>
               ) : (
                 <p className="text-xs" style={{ color: '#7a5c4e' }}>
