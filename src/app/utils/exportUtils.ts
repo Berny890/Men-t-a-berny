@@ -74,10 +74,11 @@ export const exportMenuToPDF = (
   getDishesByCategory: (id: string) => Dish[],
   deliveryDate: string | null = null,
   reservationsEnabled = false,
-  baseUrl = '',
+  _baseUrl = '',
   subtitle = 'EMPRENDIMIENTO FAMILIAR',
   portions = 'Porciones para 6 personas'
 ) => {
+  const baseUrl = window.location.origin;
   const tempDoc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PW, 1000] });
   const pageHeight = Math.max(calculateHeight(tempDoc, categories, getDishesByCategory, deliveryDate, reservationsEnabled, baseUrl), 80 * MM);
 

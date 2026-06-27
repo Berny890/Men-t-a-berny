@@ -6,7 +6,6 @@ export const SettingsManager = () => {
 
   const [subtitle, setSubtitle] = useState('');
   const [portions, setPortions] = useState('');
-  const [baseUrl, setBaseUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -14,7 +13,6 @@ export const SettingsManager = () => {
     if (!loading) {
       setSubtitle(settings.menuSubtitle);
       setPortions(settings.menuPortions);
-      setBaseUrl(settings.baseUrl);
     }
   }, [loading, settings]);
 
@@ -24,7 +22,7 @@ export const SettingsManager = () => {
 
   const handleSaveTexts = async () => {
     setSaving(true);
-    await updateSettings({ menuSubtitle: subtitle, menuPortions: portions, baseUrl });
+    await updateSettings({ menuSubtitle: subtitle, menuPortions: portions });
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -137,19 +135,6 @@ export const SettingsManager = () => {
             <input
               type="text" value={portions}
               onChange={(e) => setPortions(e.target.value)}
-              style={inputStyle}
-            />
-          </div>
-
-          <div>
-            <label style={labelStyle}>URL base del sitio</label>
-            <p style={{ fontSize: '12px', color: '#7a5c4e', margin: '0 0 8px' }}>
-              Necesaria para que los links "Reservar →" en el PDF funcionen.
-              Ej: <code style={{ background: '#f5e6d3', padding: '1px 5px', borderRadius: '4px' }}>https://mi-menu.vercel.app</code>
-            </p>
-            <input
-              type="url" value={baseUrl} placeholder="https://mi-menu.vercel.app"
-              onChange={(e) => setBaseUrl(e.target.value)}
               style={inputStyle}
             />
           </div>
