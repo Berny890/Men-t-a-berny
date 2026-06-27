@@ -46,9 +46,6 @@ const calculateHeight = (doc: jsPDF, categories: Category[], getDishesByCategory
         const lines = doc.splitTextToSize(dish.description, CW);
         h += lines.length * LINE_DESC;
       }
-      if (reservationsEnabled && baseUrl) {
-        h += 3.5 * MM;      // link reservar
-      }
       h += 3.5 * MM;        // espacio entre platos
     });
 
@@ -131,6 +128,7 @@ export const exportMenuToPDF = (
 
     catDishes.forEach((dish) => {
       const price = `$${Number(dish.price).toLocaleString('es-CL')} .-`;
+      const dishTop = y - LINE_DISH * 0.75; // punto alto del bloque
 
       doc.setFont('times', 'bold');
       doc.setFontSize(FS_DISH);
@@ -150,11 +148,7 @@ export const exportMenuToPDF = (
 
       if (reservationsEnabled && baseUrl) {
         const reserveUrl = `${baseUrl}/reservar/${dish.id}?fecha=${deliveryDate ?? ''}`;
-        doc.setFont('times', 'normal');
-        doc.setFontSize(7);
-        doc.setTextColor(139, 38, 53);
-        doc.textWithLink('Reservar →', MARGIN, y, { url: reserveUrl });
-        y += 3.5 * MM;
+        doc.link(MARGIN, dishTop, CW, y - dishTop, { url: reserveUrl });
       }
 
       y += 3.5 * MM;

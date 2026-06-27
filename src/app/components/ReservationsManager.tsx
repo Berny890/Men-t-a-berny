@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw, Trash2 } from 'lucide-react';
+import { RefreshCw, Trash2, ClipboardList } from 'lucide-react';
 import { useReservations, ReservationStatus } from '../hooks/useReservations';
 
 const STATUS_LABELS: Record<ReservationStatus, string> = {
@@ -117,8 +117,8 @@ export const ReservationsManager = () => {
               textAlign: 'center', padding: '48px 24px',
               border: '1.5px dashed #e8d5c0', borderRadius: '12px',
             }}>
-              <p style={{ fontSize: '28px', marginBottom: '12px' }}>📋</p>
-              <p style={{ color: '#7a5c4e', fontSize: '15px' }}>
+              <ClipboardList size={36} style={{ color: '#c4a882', margin: '0 auto 12px', display: 'block' }} />
+              <p style={{ color: '#7a5c4e', fontSize: '15px', margin: 0 }}>
                 {filter === 'all' ? 'Aún no hay reservas registradas.' : 'No hay reservas con este estado.'}
               </p>
             </div>

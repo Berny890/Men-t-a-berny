@@ -99,7 +99,7 @@ export const SettingsManager = () => {
             marginTop: '12px', fontSize: '13px', fontWeight: 'bold',
             color: settings.reservationsEnabled ? '#166534' : '#7a5c4e',
           }}>
-            Estado actual: {settings.reservationsEnabled ? '✅ Reservas habilitadas' : '🔒 Reservas deshabilitadas'}
+            Estado actual: {settings.reservationsEnabled ? 'Reservas habilitadas' : 'Reservas deshabilitadas'}
           </p>
         </div>
       </div>
