@@ -20,6 +20,7 @@ export interface Dish {
   deliveryCost: number;
   monthlyBatches: number;
   sortOrder: number;
+  available: boolean;
 }
 
 export interface Category {
@@ -113,6 +114,7 @@ export const useMenuData = () => {
       deliveryCost: d.delivery_cost,
       monthlyBatches: d.monthly_batches ?? 0,
       sortOrder: d.sort_order ?? 0,
+      available: d.available ?? true,
       ingredients: (ingRows || [])
         .filter((i) => i.dish_id === d.id)
         .map((i) => ({
@@ -211,9 +213,9 @@ export const useMenuData = () => {
   const addDish = async (categoryId: string, name: string, description: string, price: number) => {
     const id = Date.now().toString();
     const sortOrder = dishes.filter((d) => d.categoryId === categoryId).length;
-    const newDish: Dish = { id, categoryId, name, description, price, ingredients: [], margin: 30, deliveryCost: 0, monthlyBatches: 0, sortOrder };
+    const newDish: Dish = { id, categoryId, name, description, price, ingredients: [], margin: 30, deliveryCost: 0, monthlyBatches: 0, sortOrder, available: true };
     setDishes((prev) => [...prev, newDish]);
-    await supabase.from('dishes').insert({ id, category_id: categoryId, name, description, price, margin: 30, delivery_cost: 0, monthly_batches: 0, sort_order: sortOrder });
+    await supabase.from('dishes').insert({ id, category_id: categoryId, name, description, price, margin: 30, delivery_cost: 0, monthly_batches: 0, sort_order: sortOrder, available: true });
     return newDish;
   };
 
@@ -227,6 +229,7 @@ export const useMenuData = () => {
     if (updates.deliveryCost !== undefined) db.delivery_cost = updates.deliveryCost;
     if (updates.categoryId !== undefined) db.category_id = updates.categoryId;
     if (updates.monthlyBatches !== undefined) db.monthly_batches = updates.monthlyBatches;
+    if (updates.available !== undefined) db.available = updates.available;
     if (Object.keys(db).length > 0) await supabase.from('dishes').update(db).eq('id', id);
   };
 

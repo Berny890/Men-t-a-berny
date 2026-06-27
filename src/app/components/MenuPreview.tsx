@@ -43,7 +43,7 @@ export const MenuPreview = ({ categories, dishes, getDishesByCategory }: MenuPre
         {hasContent ? (
           <div>
             {categories.map((category) => {
-              const categoryDishes = getDishesByCategory(category.id);
+              const categoryDishes = getDishesByCategory(category.id).filter((d) => d.available !== false);
               if (categoryDishes.length === 0) return null;
 
               return (

@@ -86,6 +86,7 @@ export default function App() {
             onUpdateDish={menuData.updateDish}
             onDeleteDish={menuData.deleteDish}
             onDuplicateDish={menuData.duplicateDish}
+            onToggleAvailableDish={(id, current) => menuData.updateDish(id, { available: current === false ? true : false })}
             getDishesByCategory={menuData.getDishesByCategory}
             onReorderCategories={menuData.reorderCategories}
             onReorderDishes={menuData.reorderDishes}

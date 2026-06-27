@@ -23,6 +23,7 @@ interface MenuManagerProps {
   onUpdateDish: (id: string, updates: Partial<Dish>) => void;
   onDeleteDish: (id: string) => void;
   onDuplicateDish: (id: string) => void;
+  onToggleAvailableDish: (id: string, current: boolean) => void;
   getDishesByCategory: (categoryId: string) => Dish[];
   onReorderCategories: (ordered: Category[]) => void;
   onReorderDishes: (categoryId: string, ordered: Dish[]) => void;
@@ -30,12 +31,13 @@ interface MenuManagerProps {
 
 // ── Dish sortable row ──────────────────────────────────────────────────────────
 const SortableDish = ({
-  dish, onEdit, onDelete, onDuplicate,
+  dish, onEdit, onDelete, onDuplicate, onToggleAvailable,
 }: {
   dish: Dish;
   onEdit: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  onToggleAvailable: () => void;
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: dish.id });
@@ -59,7 +61,7 @@ const SortableDish = ({
       </button>
 
       {/* Info */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0" style={{ opacity: dish.available === false ? 0.5 : 1 }}>
         <div className="flex items-baseline gap-2">
           <span className="text-sm font-medium truncate" style={{ color: '#2c1810' }}>{dish.name}</span>
           <span className="text-sm font-bold shrink-0" style={{ color: '#8b2635' }}>{formatCLP(dish.price)} .-</span>
@@ -71,6 +73,13 @@ const SortableDish = ({
 
       {/* Acciones */}
       <div className="flex gap-1 shrink-0">
+        <button
+          onClick={onToggleAvailable}
+          title={dish.available === false ? 'Marcar como disponible' : 'Marcar como no disponible'}
+          className="p-1.5 rounded-lg transition-all hover:opacity-80"
+          style={{ background: dish.available === false ? '#dc2626' : '#16a34a', color: '#fff', minWidth: '28px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.3px' }}>
+          {dish.available === false ? '✕' : '✓'}
+        </button>
         <button onClick={onDuplicate} title="Duplicar plato"
           className="p-1.5 rounded-lg transition-all hover:opacity-80"
           style={{ background: '#f5e6d3', color: '#7a5c4e' }}>
@@ -96,7 +105,7 @@ const SortableCategory = ({
   cat, isOpen, onToggle,
   isEditingCat, editingCatName, onStartEditCat, onSaveEditCat, onCancelEditCat, onChangeCatName,
   onDeleteCategory,
-  dishes, onEditDish, onDeleteDish, onDuplicateDish,
+  dishes, onEditDish, onDeleteDish, onDuplicateDish, onToggleAvailableDish,
   editingDishId, editingDish, onStartEditDish, onSaveEditDish, onCancelEditDish, onChangeEditDish,
   addingDishIn, newDish, onStartAddDish, onCancelAddDish, onChangeNewDish, onAddDish,
   onReorderDishes,
@@ -258,6 +267,7 @@ const SortableCategory = ({
                       onEdit={() => onStartEditDish(dish)}
                       onDelete={() => onDeleteDish(dish.id, dish.name)}
                       onDuplicate={() => onDuplicateDish(dish.id)}
+                      onToggleAvailable={() => onToggleAvailableDish(dish.id, dish.available)}
                     />
                   )}
                 </div>
@@ -333,7 +343,7 @@ const SortableCategory = ({
 export const MenuManager = ({
   categories, dishes,
   onAddCategory, onUpdateCategory, onDeleteCategory,
-  onAddDish, onUpdateDish, onDeleteDish, onDuplicateDish,
+  onAddDish, onUpdateDish, onDeleteDish, onDuplicateDish, onToggleAvailableDish,
   getDishesByCategory, onReorderCategories, onReorderDishes,
 }: MenuManagerProps) => {
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
@@ -494,6 +504,7 @@ export const MenuManager = ({
                   onCancelEditCat={() => setEditingCatId(null)}
                   onChangeCatName={setEditingCatName}
                   onDeleteCategory={handleDeleteCategory}
+                  onToggleAvailableDish={onToggleAvailableDish}
                   editingDishId={editingDishId}
                   editingDish={editingDish}
                   onStartEditDish={(dish: Dish) => { setEditingDishId(dish.id); setEditingDish({ name: dish.name, description: dish.description, price: dish.price }); }}

@@ -32,7 +32,7 @@ const calculateHeight = (doc: jsPDF, categories: Category[], getDishesByCategory
   h += 7 * MM;
 
   categories.forEach((cat) => {
-    const dishes = getDishesByCategory(cat.id);
+    const dishes = getDishesByCategory(cat.id).filter((d) => d.available !== false);
     if (!dishes.length) return;
 
     h += LINE_CAT;          // nombre categoría
@@ -107,7 +107,7 @@ export const exportMenuToPDF = (
 
   // --- CATEGORÍAS Y PLATOS ---
   categories.forEach((cat) => {
-    const catDishes = getDishesByCategory(cat.id);
+    const catDishes = getDishesByCategory(cat.id).filter((d) => d.available !== false);
     if (!catDishes.length) return;
 
     doc.setFont('times', 'bold');
@@ -176,7 +176,7 @@ export const exportCostSheet = (categories: Category[], dishes: Dish[]) => {
 
   data.push(['Categoría', 'Nombre Plato', 'Descripción', 'Costo Total Ingredientes', 'Margen %', 'Precio Final']);
 
-  dishes.forEach((dish) => {
+  dishes.filter((dish) => dish.available !== false).forEach((dish) => {
     const category = categories.find((c) => c.id === dish.categoryId);
     const totalCost = dish.ingredients.reduce((sum, ing) => sum + ing.subtotal, 0);
     data.push([category?.name || 'Sin categoría', dish.name, dish.description, totalCost.toFixed(2), dish.margin, dish.price.toFixed(2)]);
