@@ -7,6 +7,8 @@ interface ExportSectionProps {
   categories: Category[];
   dishes: Dish[];
   getDishesByCategory: (categoryId: string) => Dish[];
+  reservationsEnabled?: boolean;
+  baseUrl?: string;
 }
 
 const DIAS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
@@ -119,7 +121,7 @@ const Calendar = ({
   );
 };
 
-export const ExportSection = ({ categories, dishes, getDishesByCategory }: ExportSectionProps) => {
+export const ExportSection = ({ categories, dishes, getDishesByCategory, reservationsEnabled = false, baseUrl = '' }: ExportSectionProps) => {
   const [showModal, setShowModal] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState('');
 
@@ -133,7 +135,7 @@ export const ExportSection = ({ categories, dishes, getDishesByCategory }: Expor
 
   const handleConfirm = () => {
     setShowModal(false);
-    exportMenuToPDF(categories, dishes, getDishesByCategory, deliveryDate || null);
+    exportMenuToPDF(categories, dishes, getDishesByCategory, deliveryDate || null, reservationsEnabled, baseUrl);
   };
 
   const handleExportCostSheet = () => {

@@ -77,8 +77,8 @@ const SortableDish = ({
           onClick={onToggleAvailable}
           title={dish.available === false ? 'Marcar como disponible' : 'Marcar como no disponible'}
           className="p-1.5 rounded-lg transition-all hover:opacity-80"
-          style={{ background: dish.available === false ? '#dc2626' : '#16a34a', color: '#fff', minWidth: '28px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.3px' }}>
-          {dish.available === false ? '✕' : '✓'}
+          style={{ background: dish.available === false ? '#dc2626' : '#16a34a', color: '#fff', fontSize: '10px', fontWeight: 600, letterSpacing: '0.3px', padding: '3px 8px', borderRadius: '6px', whiteSpace: 'nowrap' }}>
+          {dish.available === false ? 'No disponible' : 'Disponible'}
         </button>
         <button onClick={onDuplicate} title="Duplicar plato"
           className="p-1.5 rounded-lg transition-all hover:opacity-80"

@@ -4,9 +4,17 @@ interface MenuPreviewProps {
   categories: Category[];
   dishes: Dish[];
   getDishesByCategory: (categoryId: string) => Dish[];
+  subtitle?: string;
+  portions?: string;
 }
 
-export const MenuPreview = ({ categories, dishes, getDishesByCategory }: MenuPreviewProps) => {
+export const MenuPreview = ({
+  categories,
+  dishes,
+  getDishesByCategory,
+  subtitle = 'EMPRENDIMIENTO FAMILIAR',
+  portions = 'Porciones para 6 personas',
+}: MenuPreviewProps) => {
   const hasContent = dishes.length > 0;
 
   return (
@@ -29,10 +37,10 @@ export const MenuPreview = ({ categories, dishes, getDishesByCategory }: MenuPre
             MENÚ
           </h1>
           <p style={{ fontSize: '9.5px', letterSpacing: '3px', color: '#555', marginBottom: '3px' }}>
-            EMPRENDIMIENTO FAMILIAR
+            {subtitle}
           </p>
           <p style={{ fontSize: '8.5px', fontStyle: 'italic', color: '#777' }}>
-            Porciones para 6 personas
+            {portions}
           </p>
         </div>
 

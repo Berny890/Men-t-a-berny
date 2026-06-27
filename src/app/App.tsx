@@ -1,17 +1,21 @@
 import { useState } from 'react';
-import { UtensilsCrossed, Calculator, Eye, Download, RefreshCw, Flame } from 'lucide-react';
+import { UtensilsCrossed, Calculator, Eye, Download, RefreshCw, Flame, ClipboardList, Settings } from 'lucide-react';
 import { useMenuData } from './hooks/useMenuData';
+import { useSettings } from './hooks/useSettings';
 import { MenuManager } from './components/MenuManager';
 import { MenuPreview } from './components/MenuPreview';
 import { PriceCalculator } from './components/PriceCalculator';
 import { ExportSection } from './components/ExportSection';
 import { FixedCostsManager } from './components/FixedCostsManager';
+import { ReservationsManager } from './components/ReservationsManager';
+import { SettingsManager } from './components/SettingsManager';
 
-type Tab = 'menu' | 'costos' | 'calculator' | 'preview' | 'export';
+type Tab = 'menu' | 'costos' | 'calculator' | 'preview' | 'export' | 'reservas' | 'config';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('menu');
   const menuData = useMenuData();
+  const { settings } = useSettings();
 
   const tabs = [
     { id: 'menu' as Tab, label: 'Menú', icon: UtensilsCrossed },
@@ -19,6 +23,8 @@ export default function App() {
     { id: 'calculator' as Tab, label: 'Calculadora', icon: Calculator },
     { id: 'preview' as Tab, label: 'Vista Previa', icon: Eye },
     { id: 'export' as Tab, label: 'Exportar', icon: Download },
+    { id: 'reservas' as Tab, label: 'Reservas', icon: ClipboardList },
+    { id: 'config' as Tab, label: 'Configuración', icon: Settings },
   ];
 
   return (
@@ -121,6 +127,8 @@ export default function App() {
             categories={menuData.categories}
             dishes={menuData.dishes}
             getDishesByCategory={menuData.getDishesByCategory}
+            subtitle={settings.menuSubtitle}
+            portions={settings.menuPortions}
           />
         )}
 
@@ -129,8 +137,14 @@ export default function App() {
             categories={menuData.categories}
             dishes={menuData.dishes}
             getDishesByCategory={menuData.getDishesByCategory}
+            reservationsEnabled={settings.reservationsEnabled}
+            baseUrl={settings.baseUrl}
           />
         )}
+
+        {activeTab === 'reservas' && <ReservationsManager />}
+
+        {activeTab === 'config' && <SettingsManager />}
       </main>
 
       {/* Footer */}
@@ -139,7 +153,7 @@ export default function App() {
           <p className="text-xs text-center md:text-left" style={{ color: '#7a5c4e' }}>
             © 2026 · Los datos se guardan en la nube
           </p>
-          {activeTab !== 'menu' && (
+          {activeTab !== 'menu' && activeTab !== 'reservas' && activeTab !== 'config' && (
             <button onClick={menuData.resetToDefault}
               className="px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all hover:opacity-80"
               style={{ background: '#e8d5c0', color: '#2c1810' }}>

@@ -19,7 +19,7 @@ const LINE_DISH = 4.2 * MM;   // altura línea nombre plato
 const LINE_DESC = 3.7 * MM;   // altura línea descripción
 const LINE_CAT  = 4.5 * MM;   // altura nombre categoría
 
-const calculateHeight = (doc: jsPDF, categories: Category[], getDishesByCategory: (id: string) => Dish[], deliveryDate: string | null): number => {
+const calculateHeight = (doc: jsPDF, categories: Category[], getDishesByCategory: (id: string) => Dish[], deliveryDate: string | null, reservationsEnabled = false, baseUrl = ''): number => {
   let h = 14 * MM;  // padding top generoso
 
   // MENÚ
@@ -46,6 +46,9 @@ const calculateHeight = (doc: jsPDF, categories: Category[], getDishesByCategory
         const lines = doc.splitTextToSize(dish.description, CW);
         h += lines.length * LINE_DESC;
       }
+      if (reservationsEnabled && baseUrl) {
+        h += 3.5 * MM;      // link reservar
+      }
       h += 3.5 * MM;        // espacio entre platos
     });
 
@@ -69,10 +72,14 @@ export const exportMenuToPDF = (
   categories: Category[],
   dishes: Dish[],
   getDishesByCategory: (id: string) => Dish[],
-  deliveryDate: string | null = null
+  deliveryDate: string | null = null,
+  reservationsEnabled = false,
+  baseUrl = '',
+  subtitle = 'EMPRENDIMIENTO FAMILIAR',
+  portions = 'Porciones para 6 personas'
 ) => {
   const tempDoc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PW, 1000] });
-  const pageHeight = Math.max(calculateHeight(tempDoc, categories, getDishesByCategory, deliveryDate), 80 * MM);
+  const pageHeight = Math.max(calculateHeight(tempDoc, categories, getDishesByCategory, deliveryDate, reservationsEnabled, baseUrl), 80 * MM);
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PW, pageHeight] });
 
@@ -85,18 +92,18 @@ export const exportMenuToPDF = (
   doc.text('MENÚ', PW / 2, y, { align: 'center' });
   y += 6 * MM;
 
-  // EMPRENDIMIENTO FAMILIAR
+  // subtítulo
   doc.setFont('times', 'normal');
   doc.setFontSize(FS_SUB);
   doc.setTextColor(80, 80, 80);
-  doc.text('EMPRENDIMIENTO FAMILIAR', PW / 2, y, { align: 'center' });
+  doc.text(subtitle, PW / 2, y, { align: 'center' });
   y += 4.5 * MM;
 
-  // Porciones
+  // porciones
   doc.setFont('times', 'italic');
   doc.setFontSize(FS_POR);
   doc.setTextColor(110, 110, 110);
-  doc.text('Porciones para 6 personas', PW / 2, y, { align: 'center' });
+  doc.text(portions, PW / 2, y, { align: 'center' });
   y += 5 * MM;
 
   // Línea separadora
@@ -138,6 +145,15 @@ export const exportMenuToPDF = (
         const lines = doc.splitTextToSize(dish.description, CW);
         doc.text(lines, MARGIN, y);
         y += lines.length * LINE_DESC;
+      }
+
+      if (reservationsEnabled && baseUrl) {
+        const reserveUrl = `${baseUrl}/reservar/${dish.id}?fecha=${deliveryDate ?? ''}`;
+        doc.setFont('times', 'normal');
+        doc.setFontSize(7);
+        doc.setTextColor(139, 38, 53);
+        doc.textWithLink('Reservar →', MARGIN, y, { url: reserveUrl });
+        y += 3.5 * MM;
       }
 
       y += 3.5 * MM;
