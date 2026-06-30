@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Trash2, ClipboardList } from 'lucide-react';
-import { useReservations, ReservationStatus } from '../hooks/useReservations';
+import { useReservations, Reservation, ReservationStatus } from '../hooks/useReservations';
 
 const STATUS_LABELS: Record<ReservationStatus, string> = {
   pending: 'Pedido',
@@ -27,17 +27,49 @@ const formatDate = (dateStr: string | null): string => {
   return date.toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' }).toLowerCase();
 };
 
+interface Order {
+  orderId: string;
+  items: Reservation[];
+  customerName: string;
+  address: string;
+  contact: string;
+  deliveryDate: string | null;
+  status: ReservationStatus;
+  createdAt: string;
+}
+
 export const ReservationsManager = () => {
   const { reservations, loading, load, updateStatus, deleteReservation } = useReservations();
   const [filter, setFilter] = useState<ReservationStatus | 'all'>('all');
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = filter === 'all' ? reservations : reservations.filter((r) => r.status === filter);
+  const orders: Order[] = useMemo(() => {
+    const map = new Map<string, Reservation[]>();
+    reservations.forEach((r) => {
+      const group = map.get(r.orderId) || [];
+      group.push(r);
+      map.set(r.orderId, group);
+    });
+    return Array.from(map.values())
+      .map((items) => ({
+        orderId: items[0].orderId,
+        items,
+        customerName: items[0].customerName,
+        address: items[0].address,
+        contact: items[0].contact,
+        deliveryDate: items[0].deliveryDate,
+        status: items[0].status,
+        createdAt: items[0].createdAt,
+      }))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [reservations]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar esta reserva?')) return;
-    await deleteReservation(id);
+  const filtered = filter === 'all' ? orders : orders.filter((o) => o.status === filter);
+
+  const handleDelete = async (order: Order) => {
+    if (!confirm('¿Eliminar este pedido?')) return;
+    await deleteReservation(order.items.map((i) => i.id));
   };
 
   return (
@@ -80,10 +112,10 @@ export const ReservationsManager = () => {
               fontSize: '12px', cursor: 'pointer', fontFamily: 'Georgia, serif',
             }}
           >
-            Todos ({reservations.length})
+            Todos ({orders.length})
           </button>
           {ALL_STATUSES.map((s) => {
-            const count = reservations.filter((r) => r.status === s).length;
+            const count = orders.filter((o) => o.status === s).length;
             const active = filter === s;
             const { bg, color } = STATUS_COLORS[s];
             return (
@@ -124,51 +156,59 @@ export const ReservationsManager = () => {
             </div>
           )}
 
-          {!loading && filtered.map((r) => {
-            const sc = STATUS_COLORS[r.status];
+          {!loading && filtered.map((order) => {
+            const sc = STATUS_COLORS[order.status];
+            const orderTotal = order.items.reduce((sum, i) => sum + i.quantity, 0);
             return (
-              <div key={r.id} style={{
+              <div key={order.orderId} style={{
                 background: '#fdf6ec', border: '1.5px solid #e8d5c0',
                 borderRadius: '12px', padding: '16px', marginBottom: '12px',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
                   <div>
-                    <p style={{ fontWeight: 'bold', color: '#2c1810', fontSize: '15px', margin: '0 0 2px' }}>
-                      {r.quantity}x {r.dishName}
+                    <p style={{ color: '#7a5c4e', fontSize: '13px', margin: '0 0 4px', fontWeight: 'bold' }}>
+                      {order.customerName}
                     </p>
-                    <p style={{ color: '#7a5c4e', fontSize: '13px', margin: 0 }}>
-                      {r.customerName}
-                    </p>
+                    <div>
+                      {order.items.map((item) => (
+                        <p key={item.id} style={{ fontWeight: 'bold', color: '#2c1810', fontSize: '14px', margin: '0 0 1px' }}>
+                          {item.quantity}x {item.dishName}
+                        </p>
+                      ))}
+                    </div>
                   </div>
                   <span style={{
                     padding: '4px 12px', borderRadius: '20px',
                     background: sc.bg, color: sc.color,
                     fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap',
                   }}>
-                    {STATUS_LABELS[r.status]}
+                    {STATUS_LABELS[order.status]}
                   </span>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px', marginBottom: '12px' }}>
                   <p style={{ color: '#7a5c4e', fontSize: '12px', margin: 0 }}>
-                    <span style={{ fontWeight: 'bold' }}>Dirección:</span> {r.address}
+                    <span style={{ fontWeight: 'bold' }}>Dirección:</span> {order.address}
                   </p>
                   <p style={{ color: '#7a5c4e', fontSize: '12px', margin: 0 }}>
-                    <span style={{ fontWeight: 'bold' }}>Contacto:</span> {r.contact}
+                    <span style={{ fontWeight: 'bold' }}>Contacto:</span> {order.contact}
                   </p>
                   <p style={{ color: '#7a5c4e', fontSize: '12px', margin: 0 }}>
-                    <span style={{ fontWeight: 'bold' }}>Entrega:</span> {formatDate(r.deliveryDate)}
+                    <span style={{ fontWeight: 'bold' }}>Entrega:</span> {formatDate(order.deliveryDate)}
                   </p>
                   <p style={{ color: '#7a5c4e', fontSize: '12px', margin: 0 }}>
                     <span style={{ fontWeight: 'bold' }}>Recibido:</span>{' '}
-                    {new Date(r.createdAt).toLocaleDateString('es-CL')}
+                    {new Date(order.createdAt).toLocaleDateString('es-CL')}
+                  </p>
+                  <p style={{ color: '#7a5c4e', fontSize: '12px', margin: 0 }}>
+                    <span style={{ fontWeight: 'bold' }}>Platos en total:</span> {orderTotal}
                   </p>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <select
-                    value={r.status}
-                    onChange={(e) => updateStatus(r.id, e.target.value as ReservationStatus)}
+                    value={order.status}
+                    onChange={(e) => updateStatus(order.items.map((i) => i.id), e.target.value as ReservationStatus)}
                     style={{
                       flex: 1, padding: '7px 10px', borderRadius: '8px',
                       border: '1.5px solid #e8d5c0', background: '#fff',
@@ -180,7 +220,7 @@ export const ReservationsManager = () => {
                     ))}
                   </select>
                   <button
-                    onClick={() => handleDelete(r.id)}
+                    onClick={() => handleDelete(order)}
                     style={{
                       padding: '7px 10px', borderRadius: '8px',
                       background: '#fde8e8', color: '#8b2635', border: 'none',

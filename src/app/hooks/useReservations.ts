@@ -5,6 +5,7 @@ export type ReservationStatus = 'pending' | 'purchased' | 'preparing' | 'deliver
 
 export interface Reservation {
   id: string;
+  orderId: string;
   dishId: string;
   dishName: string;
   quantity: number;
@@ -18,6 +19,7 @@ export interface Reservation {
 
 const fromRow = (row: Record<string, unknown>): Reservation => ({
   id: row.id as string,
+  orderId: (row.order_id as string) || (row.id as string),
   dishId: row.dish_id as string,
   dishName: row.dish_name as string,
   quantity: row.quantity as number,
@@ -43,16 +45,16 @@ export const useReservations = () => {
     setLoading(false);
   }, []);
 
-  const updateStatus = async (id: string, status: ReservationStatus) => {
+  const updateStatus = async (ids: string[], status: ReservationStatus) => {
     setReservations((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status } : r))
+      prev.map((r) => (ids.includes(r.id) ? { ...r, status } : r))
     );
-    await supabase.from('reservations').update({ status }).eq('id', id);
+    await supabase.from('reservations').update({ status }).in('id', ids);
   };
 
-  const deleteReservation = async (id: string) => {
-    setReservations((prev) => prev.filter((r) => r.id !== id));
-    await supabase.from('reservations').delete().eq('id', id);
+  const deleteReservation = async (ids: string[]) => {
+    setReservations((prev) => prev.filter((r) => !ids.includes(r.id)));
+    await supabase.from('reservations').delete().in('id', ids);
   };
 
   return { reservations, loading, load, updateStatus, deleteReservation };

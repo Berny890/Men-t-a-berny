@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router';
-import { CalendarDays, Lock, UtensilsCrossed, CheckCircle } from 'lucide-react';
+import { CalendarDays, Lock, UtensilsCrossed, CheckCircle, Plus, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface DishInfo {
@@ -9,6 +9,13 @@ interface DishInfo {
   description: string;
   price: number;
   available: boolean;
+}
+
+interface OrderItem {
+  dishId: string;
+  dishName: string;
+  price: number;
+  quantity: number;
 }
 
 const formatDateSpanish = (dateStr: string): string => {
@@ -25,11 +32,13 @@ export default function ReservationPage() {
   const fecha = searchParams.get('fecha') || '';
 
   const [dish, setDish] = useState<DishInfo | null>(null);
+  const [otherDishes, setOtherDishes] = useState<DishInfo[]>([]);
   const [reservationsEnabled, setReservationsEnabled] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  const [quantity, setQuantity] = useState(1);
+  const [items, setItems] = useState<OrderItem[]>([]);
+  const [showAddPicker, setShowAddPicker] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [address, setAddress] = useState('');
   const [contact, setContact] = useState('');
@@ -40,40 +49,72 @@ export default function ReservationPage() {
 
   useEffect(() => {
     const init = async () => {
-      const [{ data: settingRow }, { data: dishRow }] = await Promise.all([
+      const [{ data: settingRow }, { data: dishRow }, { data: allDishes }] = await Promise.all([
         supabase.from('settings').select('value').eq('key', 'menu_mode').single(),
         supabase.from('dishes').select('id, name, description, price, available').eq('id', dishId!).single(),
+        supabase.from('dishes').select('id, name, description, price, available').eq('available', true),
       ]);
       setReservationsEnabled(settingRow?.value === 'reservations');
       if (!dishRow) {
         setNotFound(true);
       } else {
         setDish(dishRow as DishInfo);
+        setItems([{ dishId: dishRow.id, dishName: dishRow.name, price: dishRow.price, quantity: 1 }]);
       }
+      setOtherDishes(((allDishes as DishInfo[]) || []).filter((d) => d.id !== dishId));
       setPageLoading(false);
     };
     init();
   }, [dishId]);
 
+  const addDishToOrder = (d: DishInfo) => {
+    setItems((prev) => {
+      const existing = prev.find((i) => i.dishId === d.id);
+      if (existing) {
+        return prev.map((i) => i.dishId === d.id ? { ...i, quantity: i.quantity + 1 } : i);
+      }
+      return [...prev, { dishId: d.id, dishName: d.name, price: d.price, quantity: 1 }];
+    });
+    setShowAddPicker(false);
+  };
+
+  const updateItemQuantity = (dishId: string, delta: number) => {
+    setItems((prev) => prev
+      .map((i) => i.dishId === dishId ? { ...i, quantity: i.quantity + delta } : i)
+      .filter((i) => i.quantity > 0)
+    );
+  };
+
+  const removeItem = (dishId: string) => {
+    setItems((prev) => prev.filter((i) => i.dishId !== dishId));
+  };
+
+  const total = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const pickerOptions = otherDishes.filter((d) => !items.some((i) => i.dishId === d.id));
+
   const handleReserve = () => {
-    if (!customerName.trim() || !address.trim() || !contact.trim()) return;
+    if (!customerName.trim() || !address.trim() || !contact.trim() || items.length === 0) return;
     setShowConfirm(true);
   };
 
   const handleConfirm = async () => {
-    if (!dish) return;
+    if (items.length === 0) return;
     setSubmitting(true);
-    await supabase.from('reservations').insert({
-      id: Date.now().toString(),
-      dish_id: dish.id,
-      dish_name: dish.name,
-      quantity,
-      customer_name: customerName.trim(),
-      address: address.trim(),
-      contact: contact.trim(),
-      delivery_date: fecha || null,
-      status: 'pending',
-    });
+    const orderId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    await supabase.from('reservations').insert(
+      items.map((item) => ({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        order_id: orderId,
+        dish_id: item.dishId,
+        dish_name: item.dishName,
+        quantity: item.quantity,
+        customer_name: customerName.trim(),
+        address: address.trim(),
+        contact: contact.trim(),
+        delivery_date: fecha || null,
+        status: 'pending',
+      }))
+    );
     setSubmitting(false);
     setShowConfirm(false);
     setShowSuccess(true);
@@ -148,6 +189,8 @@ export default function ReservationPage() {
     fontFamily: 'Georgia, serif',
   };
 
+  const summaryText = items.map((i) => `${i.quantity} x ${i.dishName}`).join(', ');
+
   return (
     <div style={{ minHeight: '100vh', background: '#fdf6ec', padding: '32px 16px', fontFamily: 'Georgia, serif' }}>
       <div style={{ maxWidth: '480px', margin: '0 auto' }}>
@@ -176,6 +219,98 @@ export default function ReservationPage() {
           </p>
         </div>
 
+        {/* Tu pedido */}
+        <div style={{
+          background: '#fffaf3', border: '1px solid #e8d5c0',
+          borderRadius: '16px', padding: '24px', marginBottom: '24px',
+        }}>
+          <h2 style={{ fontSize: '17px', fontWeight: 'bold', color: '#2c1810', marginBottom: '16px' }}>
+            Tu pedido
+          </h2>
+
+          {items.map((item) => (
+            <div key={item.dishId} style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '10px 0', borderBottom: '1px solid #f0e4d4',
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '14px', fontWeight: 'bold', color: '#2c1810', margin: 0 }}>
+                  {item.dishName}
+                </p>
+                <p style={{ fontSize: '12px', color: '#7a5c4e', margin: 0 }}>
+                  ${Number(item.price).toLocaleString('es-CL')} c/u
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e8d5c0', borderRadius: '8px', overflow: 'hidden', flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => updateItemQuantity(item.dishId, -1)}
+                  style={{
+                    width: '30px', height: '30px', border: 'none', background: '#f5e6d3',
+                    color: '#8b2635', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  −
+                </button>
+                <span style={{ width: '26px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#2c1810' }}>
+                  {item.quantity}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => updateItemQuantity(item.dishId, 1)}
+                  style={{
+                    width: '30px', height: '30px', border: 'none', background: '#8b2635',
+                    color: '#fff', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  +
+                </button>
+              </div>
+
+              {items.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeItem(item.dishId)}
+                  style={{
+                    width: '30px', height: '30px', border: 'none', borderRadius: '8px',
+                    background: '#fde8e8', color: '#8b2635', cursor: 'pointer', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
+          ))}
+
+          {pickerOptions.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowAddPicker(true)}
+              style={{
+                width: '100%', marginTop: '14px', padding: '11px',
+                borderRadius: '10px', border: '1.5px dashed #c4a882',
+                background: 'transparent', color: '#8b2635',
+                fontSize: '13px', fontWeight: 'bold', cursor: 'pointer',
+                fontFamily: 'Georgia, serif', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', gap: '6px',
+              }}
+            >
+              <Plus size={15} /> Agregar otro plato
+            </button>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '18px', paddingTop: '14px', borderTop: '1.5px solid #e8d5c0' }}>
+            <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#7a5c4e' }}>Total</span>
+            <span style={{ fontSize: '19px', fontWeight: 'bold', color: '#8b2635' }}>
+              ${total.toLocaleString('es-CL')} .-
+            </span>
+          </div>
+        </div>
+
         {/* Form */}
         <div style={{
           background: '#fffaf3', border: '1px solid #e8d5c0',
@@ -184,42 +319,6 @@ export default function ReservationPage() {
           <h2 style={{ fontSize: '17px', fontWeight: 'bold', color: '#2c1810', marginBottom: '20px' }}>
             Datos de tu reserva
           </h2>
-
-          <div style={{ marginBottom: '16px' }}>
-            <label style={labelStyle}>Cantidad</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1.5px solid #e8d5c0', borderRadius: '10px', overflow: 'hidden', background: '#fff' }}>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                style={{
-                  width: '52px', height: '48px', border: 'none', background: '#f5e6d3',
-                  color: '#8b2635', fontSize: '22px', fontWeight: 'bold', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  borderRight: '1px solid #e8d5c0', flexShrink: 0,
-                }}
-              >
-                −
-              </button>
-              <span style={{
-                flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 'bold',
-                color: '#2c1810', fontFamily: 'Georgia, serif',
-              }}>
-                {quantity}
-              </span>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => q + 1)}
-                style={{
-                  width: '52px', height: '48px', border: 'none', background: '#8b2635',
-                  color: '#fff', fontSize: '22px', fontWeight: 'bold', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  borderLeft: '1px solid #e8d5c0', flexShrink: 0,
-                }}
-              >
-                +
-              </button>
-            </div>
-          </div>
 
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Nombre completo</label>
@@ -250,13 +349,13 @@ export default function ReservationPage() {
 
           <button
             onClick={handleReserve}
-            disabled={!customerName.trim() || !address.trim() || !contact.trim()}
+            disabled={!customerName.trim() || !address.trim() || !contact.trim() || items.length === 0}
             style={{
               width: '100%', padding: '13px', borderRadius: '12px',
-              background: (!customerName.trim() || !address.trim() || !contact.trim()) ? '#e8d5c0' : '#8b2635',
-              color: (!customerName.trim() || !address.trim() || !contact.trim()) ? '#7a5c4e' : '#fff',
+              background: (!customerName.trim() || !address.trim() || !contact.trim() || items.length === 0) ? '#e8d5c0' : '#8b2635',
+              color: (!customerName.trim() || !address.trim() || !contact.trim() || items.length === 0) ? '#7a5c4e' : '#fff',
               fontSize: '16px', fontWeight: 'bold', border: 'none',
-              cursor: (!customerName.trim() || !address.trim() || !contact.trim()) ? 'not-allowed' : 'pointer',
+              cursor: (!customerName.trim() || !address.trim() || !contact.trim() || items.length === 0) ? 'not-allowed' : 'pointer',
               fontFamily: 'Georgia, serif', transition: 'opacity 0.2s',
             }}
           >
@@ -264,6 +363,55 @@ export default function ReservationPage() {
           </button>
         </div>
       </div>
+
+      {/* Add dish picker */}
+      {showAddPicker && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 50, padding: '16px',
+        }}>
+          <div style={{
+            background: '#fffaf3', border: '1px solid #e8d5c0',
+            borderRadius: '16px', maxWidth: '420px', width: '100%',
+            maxHeight: '70vh', display: 'flex', flexDirection: 'column',
+            fontFamily: 'Georgia, serif', overflow: 'hidden',
+          }}>
+            <div style={{
+              padding: '20px 24px', borderBottom: '1px solid #e8d5c0',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#2c1810', margin: 0 }}>
+                Agregar plato
+              </h3>
+              <button onClick={() => setShowAddPicker(false)} style={{ color: '#7a5c4e', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '12px 16px' }}>
+              {pickerOptions.map((d) => (
+                <button
+                  key={d.id}
+                  onClick={() => addDishToOrder(d)}
+                  style={{
+                    width: '100%', textAlign: 'left', padding: '12px 14px',
+                    borderRadius: '10px', border: 'none', background: 'transparent',
+                    cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
+                    alignItems: 'center', gap: '10px', marginBottom: '4px',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#fdf6ec')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <span style={{ fontSize: '14px', color: '#2c1810', fontWeight: 'bold' }}>{d.name}</span>
+                  <span style={{ fontSize: '13px', color: '#8b2635', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                    ${Number(d.price).toLocaleString('es-CL')}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirm modal */}
       {showConfirm && (
@@ -282,7 +430,7 @@ export default function ReservationPage() {
             </h3>
             <p style={{ fontSize: '14px', color: '#7a5c4e', lineHeight: '1.7', marginBottom: '24px' }}>
               Estás reservando{' '}
-              <strong style={{ color: '#2c1810' }}>{quantity} x {dish.name}</strong>
+              <strong style={{ color: '#2c1810' }}>{summaryText}</strong>
               {', para el '}
               <strong style={{ color: '#2c1810' }}>
                 {fecha ? formatDateSpanish(fecha) : 'fecha por confirmar'}
