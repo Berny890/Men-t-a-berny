@@ -142,10 +142,10 @@ export const SettingsManager = () => {
             <div>
               <label style={labelStyle}>Número de WhatsApp que recibe los encargos</label>
               <p style={{ fontSize: '12px', color: '#7a5c4e', margin: '0 0 8px' }}>
-                Con código de país, solo números. Ej: 56977289027
+                Con código de país, solo números. Ej: 569XXXXXXXX
               </p>
               <input
-                type="text" value={whatsappNumber} placeholder="56977289027"
+                type="text" value={whatsappNumber} placeholder="569XXXXXXXX"
                 onChange={(e) => setWhatsappNumber(e.target.value)}
                 style={inputStyle}
               />
@@ -213,7 +213,7 @@ export const SettingsManager = () => {
           <div>
             <label style={labelStyle}>Texto de porciones</label>
             <p style={{ fontSize: '12px', color: '#7a5c4e', margin: '0 0 8px' }}>
-              Ej: "Porciones para 6 personas"
+              Ej: "Porciones para seis personas"
             </p>
             <input
               type="text" value={portions}

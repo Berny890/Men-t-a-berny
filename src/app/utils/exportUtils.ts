@@ -71,7 +71,9 @@ const formatDateForMessage = (dateStr: string | null): string => {
   if (!dateStr) return 'fecha por confirmar';
   const [y, m, d] = dateStr.split('-').map(Number);
   const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toLowerCase();
+  const weekday = date.toLocaleDateString('es-CL', { weekday: 'long' }).toLowerCase();
+  const month = date.toLocaleDateString('es-CL', { month: 'long' }).toLowerCase();
+  return `${weekday} ${d} de ${month}`;
 };
 
 const buildWhatsappUrl = (number: string, template: string, dishName: string, deliveryDate: string | null): string => {
