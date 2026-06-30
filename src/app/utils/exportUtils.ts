@@ -19,7 +19,7 @@ const LINE_DISH = 4.2 * MM;   // altura línea nombre plato
 const LINE_DESC = 3.7 * MM;   // altura línea descripción
 const LINE_CAT  = 4.5 * MM;   // altura nombre categoría
 
-const calculateHeight = (doc: jsPDF, categories: Category[], getDishesByCategory: (id: string) => Dish[], deliveryDate: string | null, reservationsEnabled = false, baseUrl = ''): number => {
+const calculateHeight = (doc: jsPDF, categories: Category[], getDishesByCategory: (id: string) => Dish[], deliveryDate: string | null): number => {
   let h = 14 * MM;  // padding top generoso
 
   // MENÚ
@@ -65,19 +65,36 @@ const formatDateLong = (dateStr: string): string => {
   return date.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 };
 
+export type MenuMode = 'simple' | 'reservations' | 'whatsapp';
+
+const formatDateForMessage = (dateStr: string | null): string => {
+  if (!dateStr) return 'fecha por confirmar';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toLowerCase();
+};
+
+const buildWhatsappUrl = (number: string, template: string, dishName: string, deliveryDate: string | null): string => {
+  const message = template
+    .replace('{fecha}', formatDateForMessage(deliveryDate))
+    .replace('{plato}', dishName);
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+};
+
 export const exportMenuToPDF = (
   categories: Category[],
   dishes: Dish[],
   getDishesByCategory: (id: string) => Dish[],
   deliveryDate: string | null = null,
-  reservationsEnabled = false,
-  _baseUrl = '',
+  menuMode: MenuMode = 'simple',
+  whatsappNumber = '',
+  whatsappMessageTemplate = '',
   subtitle = 'EMPRENDIMIENTO FAMILIAR',
   portions = 'Porciones para 6 personas'
 ) => {
   const baseUrl = window.location.origin;
   const tempDoc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PW, 1000] });
-  const pageHeight = Math.max(calculateHeight(tempDoc, categories, getDishesByCategory, deliveryDate, reservationsEnabled, baseUrl), 80 * MM);
+  const pageHeight = Math.max(calculateHeight(tempDoc, categories, getDishesByCategory, deliveryDate), 80 * MM);
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [PW, pageHeight] });
 
@@ -146,9 +163,12 @@ export const exportMenuToPDF = (
         y += lines.length * LINE_DESC;
       }
 
-      if (reservationsEnabled && baseUrl) {
+      if (menuMode === 'reservations') {
         const reserveUrl = `${baseUrl}/reservar/${dish.id}?fecha=${deliveryDate ?? ''}`;
         doc.link(MARGIN, dishTop, CW, y - dishTop, { url: reserveUrl });
+      } else if (menuMode === 'whatsapp' && whatsappNumber) {
+        const waUrl = buildWhatsappUrl(whatsappNumber, whatsappMessageTemplate, dish.name, deliveryDate);
+        doc.link(MARGIN, dishTop, CW, y - dishTop, { url: waUrl });
       }
 
       y += 3.5 * MM;

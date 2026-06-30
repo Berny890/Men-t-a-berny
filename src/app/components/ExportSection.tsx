@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Download, FileText, Table, CalendarDays, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Category, Dish } from '../hooks/useMenuData';
-import { exportMenuToPDF, exportCostSheet } from '../utils/exportUtils';
+import { exportMenuToPDF, exportCostSheet, MenuMode } from '../utils/exportUtils';
 
 interface ExportSectionProps {
   categories: Category[];
   dishes: Dish[];
   getDishesByCategory: (categoryId: string) => Dish[];
-  reservationsEnabled?: boolean;
-  baseUrl?: string;
+  menuMode?: MenuMode;
+  whatsappNumber?: string;
+  whatsappMessageTemplate?: string;
 }
 
 const DIAS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá', 'Do'];
@@ -121,7 +122,7 @@ const Calendar = ({
   );
 };
 
-export const ExportSection = ({ categories, dishes, getDishesByCategory, reservationsEnabled = false, baseUrl = '' }: ExportSectionProps) => {
+export const ExportSection = ({ categories, dishes, getDishesByCategory, menuMode = 'simple', whatsappNumber = '', whatsappMessageTemplate = '' }: ExportSectionProps) => {
   const [showModal, setShowModal] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState('');
 
@@ -135,7 +136,7 @@ export const ExportSection = ({ categories, dishes, getDishesByCategory, reserva
 
   const handleConfirm = () => {
     setShowModal(false);
-    exportMenuToPDF(categories, dishes, getDishesByCategory, deliveryDate || null, reservationsEnabled, baseUrl);
+    exportMenuToPDF(categories, dishes, getDishesByCategory, deliveryDate || null, menuMode, whatsappNumber, whatsappMessageTemplate);
   };
 
   const handleExportCostSheet = () => {

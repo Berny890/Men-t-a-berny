@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router';
+import { CalendarDays, Lock, UtensilsCrossed, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface DishInfo {
@@ -15,7 +16,7 @@ const formatDateSpanish = (dateStr: string): string => {
   const date = new Date(y, m - 1, d);
   return date.toLocaleDateString('es-CL', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-  });
+  }).toLowerCase();
 };
 
 export default function ReservationPage() {
@@ -40,10 +41,10 @@ export default function ReservationPage() {
   useEffect(() => {
     const init = async () => {
       const [{ data: settingRow }, { data: dishRow }] = await Promise.all([
-        supabase.from('settings').select('value').eq('key', 'reservations_enabled').single(),
+        supabase.from('settings').select('value').eq('key', 'menu_mode').single(),
         supabase.from('dishes').select('id, name, description, price, available').eq('id', dishId!).single(),
       ]);
-      setReservationsEnabled(settingRow?.value === 'true');
+      setReservationsEnabled(settingRow?.value === 'reservations');
       if (!dishRow) {
         setNotFound(true);
       } else {
@@ -102,7 +103,7 @@ export default function ReservationPage() {
           background: '#fffaf3', border: '1px solid #e8d5c0',
           borderRadius: '16px', padding: '48px 32px',
         }}>
-          <p style={{ fontSize: '32px', marginBottom: '16px' }}>🔒</p>
+          <Lock size={40} style={{ color: '#c4a882', margin: '0 auto 16px', display: 'block' }} />
           <h2 style={{ fontFamily: 'Georgia, serif', color: '#2c1810', marginBottom: '12px', fontSize: '20px' }}>
             Reservas no disponibles
           </h2>
@@ -122,7 +123,7 @@ export default function ReservationPage() {
           background: '#fffaf3', border: '1px solid #e8d5c0',
           borderRadius: '16px', padding: '48px 32px',
         }}>
-          <p style={{ fontSize: '32px', marginBottom: '16px' }}>😔</p>
+          <UtensilsCrossed size={40} style={{ color: '#c4a882', margin: '0 auto 16px', display: 'block' }} />
           <h2 style={{ fontFamily: 'Georgia, serif', color: '#2c1810', marginBottom: '12px', fontSize: '20px' }}>
             Plato no disponible
           </h2>
@@ -157,8 +158,9 @@ export default function ReservationPage() {
           borderRadius: '16px', padding: '28px 24px', marginBottom: '24px',
         }}>
           {fecha && (
-            <p style={{ fontSize: '12px', color: '#7a5c4e', marginBottom: '12px', textTransform: 'capitalize' }}>
-              📅 {formatDateSpanish(fecha)}
+            <p style={{ fontSize: '12px', color: '#7a5c4e', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CalendarDays size={13} style={{ flexShrink: 0 }} />
+              {formatDateSpanish(fecha)}
             </p>
           )}
           <h1 style={{ fontSize: '22px', fontWeight: 'bold', color: '#2c1810', marginBottom: '8px' }}>
@@ -185,11 +187,38 @@ export default function ReservationPage() {
 
           <div style={{ marginBottom: '16px' }}>
             <label style={labelStyle}>Cantidad</label>
-            <input
-              type="number" min={1} value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-              style={inputStyle}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0', border: '1.5px solid #e8d5c0', borderRadius: '10px', overflow: 'hidden', background: '#fff' }}>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                style={{
+                  width: '52px', height: '48px', border: 'none', background: '#f5e6d3',
+                  color: '#8b2635', fontSize: '22px', fontWeight: 'bold', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderRight: '1px solid #e8d5c0', flexShrink: 0,
+                }}
+              >
+                −
+              </button>
+              <span style={{
+                flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 'bold',
+                color: '#2c1810', fontFamily: 'Georgia, serif',
+              }}>
+                {quantity}
+              </span>
+              <button
+                type="button"
+                onClick={() => setQuantity((q) => q + 1)}
+                style={{
+                  width: '52px', height: '48px', border: 'none', background: '#8b2635',
+                  color: '#fff', fontSize: '22px', fontWeight: 'bold', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  borderLeft: '1px solid #e8d5c0', flexShrink: 0,
+                }}
+              >
+                +
+              </button>
+            </div>
           </div>
 
           <div style={{ marginBottom: '16px' }}>
@@ -302,7 +331,7 @@ export default function ReservationPage() {
             borderRadius: '16px', maxWidth: '380px', width: '100%',
             padding: '40px 28px', textAlign: 'center', fontFamily: 'Georgia, serif',
           }}>
-            <p style={{ fontSize: '40px', marginBottom: '16px' }}>✅</p>
+            <CheckCircle size={48} style={{ color: '#16a34a', margin: '0 auto 16px', display: 'block' }} />
             <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#2c1810', marginBottom: '12px' }}>
               ¡Listo!
             </h3>

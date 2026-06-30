@@ -137,8 +137,9 @@ export default function App() {
             categories={menuData.categories}
             dishes={menuData.dishes}
             getDishesByCategory={menuData.getDishesByCategory}
-            reservationsEnabled={settings.reservationsEnabled}
-            baseUrl={settings.baseUrl}
+            menuMode={settings.menuMode}
+            whatsappNumber={settings.whatsappNumber}
+            whatsappMessageTemplate={settings.whatsappMessageTemplate}
           />
         )}
 

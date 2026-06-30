@@ -1,25 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
+export type MenuMode = 'simple' | 'reservations' | 'whatsapp';
+
 export interface Settings {
-  reservationsEnabled: boolean;
+  menuMode: MenuMode;
   menuSubtitle: string;
   menuPortions: string;
   baseUrl: string;
+  whatsappNumber: string;
+  whatsappMessageTemplate: string;
 }
 
+export const WHATSAPP_DEFAULT_TEMPLATE =
+  '¡Hola Bernardita! ¿Qué tal estás? Te quiero encargar para {fecha} un plato de {plato}. Mi dirección es la siguiente: ';
+
 const DEFAULTS: Settings = {
-  reservationsEnabled: false,
+  menuMode: 'simple',
   menuSubtitle: 'EMPRENDIMIENTO FAMILIAR',
   menuPortions: 'Porciones para 6 personas',
   baseUrl: '',
+  whatsappNumber: '',
+  whatsappMessageTemplate: WHATSAPP_DEFAULT_TEMPLATE,
 };
 
 const KEY_MAP: Record<keyof Settings, string> = {
-  reservationsEnabled: 'reservations_enabled',
+  menuMode: 'menu_mode',
   menuSubtitle: 'menu_subtitle',
   menuPortions: 'menu_portions',
   baseUrl: 'base_url',
+  whatsappNumber: 'whatsapp_number',
+  whatsappMessageTemplate: 'whatsapp_message_template',
 };
 
 export const useSettings = () => {
@@ -32,11 +43,14 @@ export const useSettings = () => {
     if (data) {
       const map: Record<string, string> = {};
       data.forEach((row) => { map[row.key] = row.value; });
+      const legacyMode: MenuMode = map['reservations_enabled'] === 'true' ? 'reservations' : 'simple';
       setSettings({
-        reservationsEnabled: map['reservations_enabled'] === 'true',
+        menuMode: (map['menu_mode'] as MenuMode) ?? legacyMode,
         menuSubtitle: map['menu_subtitle'] ?? DEFAULTS.menuSubtitle,
         menuPortions: map['menu_portions'] ?? DEFAULTS.menuPortions,
         baseUrl: map['base_url'] ?? DEFAULTS.baseUrl,
+        whatsappNumber: map['whatsapp_number'] ?? DEFAULTS.whatsappNumber,
+        whatsappMessageTemplate: map['whatsapp_message_template'] ?? DEFAULTS.whatsappMessageTemplate,
       });
     }
     setLoading(false);
