@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { UtensilsCrossed, Calculator, Eye, Download, RefreshCw, Flame, ClipboardList, Settings } from 'lucide-react';
+import { UtensilsCrossed, Calculator, Eye, Download, RefreshCw, Flame, ClipboardList, Settings, LogOut } from 'lucide-react';
 import { useMenuData } from './hooks/useMenuData';
 import { useSettings } from './hooks/useSettings';
+import { useAuth } from './hooks/useAuth';
+import { LoginGate } from './components/LoginGate';
 import { MenuManager } from './components/MenuManager';
 import { MenuPreview } from './components/MenuPreview';
 import { PriceCalculator } from './components/PriceCalculator';
@@ -12,10 +14,11 @@ import { SettingsManager } from './components/SettingsManager';
 
 type Tab = 'menu' | 'costos' | 'calculator' | 'preview' | 'export' | 'reservas' | 'config';
 
-export default function App() {
+function AdminApp() {
   const [activeTab, setActiveTab] = useState<Tab>('menu');
   const menuData = useMenuData();
-  const { settings } = useSettings();
+  const { settings, loading: settingsLoading, updateSettings } = useSettings();
+  const { logout, changePassword } = useAuth();
 
   const tabs = [
     { id: 'menu' as Tab, label: 'Menú', icon: UtensilsCrossed },
@@ -145,7 +148,14 @@ export default function App() {
 
         {activeTab === 'reservas' && <ReservationsManager />}
 
-        {activeTab === 'config' && <SettingsManager />}
+        {activeTab === 'config' && (
+          <SettingsManager
+            settings={settings}
+            loading={settingsLoading}
+            updateSettings={updateSettings}
+            changePassword={changePassword}
+          />
+        )}
       </main>
 
       {/* Footer */}
@@ -154,15 +164,30 @@ export default function App() {
           <p className="text-xs text-center md:text-left" style={{ color: '#7a5c4e' }}>
             © 2026 · Los datos se guardan en la nube
           </p>
-          {activeTab !== 'menu' && activeTab !== 'reservas' && activeTab !== 'config' && (
-            <button onClick={menuData.resetToDefault}
+          <div className="flex items-center gap-2">
+            {activeTab !== 'menu' && activeTab !== 'reservas' && activeTab !== 'config' && (
+              <button onClick={menuData.resetToDefault}
+                className="px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all hover:opacity-80"
+                style={{ background: '#e8d5c0', color: '#2c1810' }}>
+                <RefreshCw size={13} /> Restaurar ejemplo
+              </button>
+            )}
+            <button onClick={logout}
               className="px-4 py-2 rounded-lg text-xs flex items-center gap-2 transition-all hover:opacity-80"
               style={{ background: '#e8d5c0', color: '#2c1810' }}>
-              <RefreshCw size={13} /> Restaurar ejemplo
+              <LogOut size={13} /> Cerrar sesión
             </button>
-          )}
+          </div>
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <LoginGate>
+      <AdminApp />
+    </LoginGate>
   );
 }

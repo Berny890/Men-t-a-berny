@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useSettings, MenuMode, WHATSAPP_DEFAULT_TEMPLATE } from '../hooks/useSettings';
+import { Settings as SettingsType, MenuMode, WHATSAPP_DEFAULT_TEMPLATE } from '../hooks/useSettings';
+
+const formatPreviewDate = (): string => {
+  const date = new Date();
+  date.setDate(date.getDate() + 7);
+  const weekday = date.toLocaleDateString('es-CL', { weekday: 'long' }).toLowerCase();
+  const month = date.toLocaleDateString('es-CL', { month: 'long' }).toLowerCase();
+  return `${weekday} ${date.getDate()} de ${month}`;
+};
 
 const MODE_OPTIONS: { value: MenuMode; title: string; description: string }[] = [
   {
@@ -19,13 +27,24 @@ const MODE_OPTIONS: { value: MenuMode; title: string; description: string }[] = 
   },
 ];
 
-export const SettingsManager = () => {
-  const { settings, loading, updateSettings } = useSettings();
+interface SettingsManagerProps {
+  settings: SettingsType;
+  loading: boolean;
+  updateSettings: (updates: Partial<SettingsType>) => Promise<void>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<boolean>;
+}
 
+export const SettingsManager = ({ settings, loading, updateSettings, changePassword }: SettingsManagerProps) => {
   const [subtitle, setSubtitle] = useState('');
   const [portions, setPortions] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [whatsappTemplate, setWhatsappTemplate] = useState('');
+
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwMessage, setPwMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -40,6 +59,28 @@ export const SettingsManager = () => {
 
   const handleModeChange = async (mode: MenuMode) => {
     await updateSettings({ menuMode: mode });
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwMessage(null);
+    if (newPassword.length < 6) {
+      setPwMessage({ type: 'error', text: 'La nueva clave debe tener al menos 6 caracteres.' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwMessage({ type: 'error', text: 'Las claves nuevas no coinciden.' });
+      return;
+    }
+    setPwSaving(true);
+    const ok = await changePassword(oldPassword, newPassword);
+    setPwSaving(false);
+    if (ok) {
+      setPwMessage({ type: 'ok', text: 'Clave actualizada correctamente.' });
+      setOldPassword(''); setNewPassword(''); setConfirmPassword('');
+    } else {
+      setPwMessage({ type: 'error', text: 'La clave actual no es correcta.' });
+    }
   };
 
   const handleSave = async () => {
@@ -77,7 +118,7 @@ export const SettingsManager = () => {
   }
 
   const previewMessage = whatsappTemplate
-    .replace('{fecha}', 'sábado 5 de julio de 2026')
+    .replace('{fecha}', formatPreviewDate())
     .replace('{plato}', 'Lasaña de Carne');
 
   return (
@@ -236,6 +277,74 @@ export const SettingsManager = () => {
             {saving ? 'Guardando...' : saved ? '✓ Guardado' : 'Guardar cambios'}
           </button>
         </div>
+      </div>
+
+      {/* Seguridad */}
+      <div style={{
+        background: '#fffaf3', border: '1px solid #e8d5c0',
+        borderRadius: '16px', overflow: 'hidden', marginTop: '20px',
+      }}>
+        <div style={{ background: '#f5e6d3', borderBottom: '1px solid #e8d5c0', padding: '16px 24px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: '#2c1810', margin: 0 }}>
+            Seguridad
+          </h2>
+        </div>
+        <form onSubmit={handleChangePassword} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ fontSize: '13px', color: '#7a5c4e', margin: 0, lineHeight: '1.5' }}>
+            Cambia la clave de acceso al panel de administración.
+          </p>
+
+          <div>
+            <label style={labelStyle}>Clave actual</label>
+            <input
+              type="password" value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              style={inputStyle}
+              autoComplete="current-password"
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Clave nueva</label>
+            <input
+              type="password" value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              style={inputStyle}
+              autoComplete="new-password"
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Confirmar clave nueva</label>
+            <input
+              type="password" value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              style={inputStyle}
+              autoComplete="new-password"
+            />
+          </div>
+
+          {pwMessage && (
+            <p style={{ fontSize: '13px', fontWeight: 'bold', margin: 0, color: pwMessage.type === 'ok' ? '#166534' : '#dc2626' }}>
+              {pwMessage.text}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={pwSaving || !oldPassword || !newPassword || !confirmPassword}
+            style={{
+              padding: '11px 24px', borderRadius: '10px', border: 'none',
+              background: (pwSaving || !oldPassword || !newPassword || !confirmPassword) ? '#e8d5c0' : '#8b2635',
+              color: (pwSaving || !oldPassword || !newPassword || !confirmPassword) ? '#7a5c4e' : '#fff',
+              fontSize: '14px', fontWeight: 'bold',
+              cursor: pwSaving ? 'wait' : 'pointer', fontFamily: 'Georgia, serif',
+              alignSelf: 'flex-start', transition: 'background 0.2s',
+            }}
+          >
+            {pwSaving ? 'Cambiando...' : 'Cambiar clave'}
+          </button>
+        </form>
       </div>
     </div>
   );
