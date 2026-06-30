@@ -17,8 +17,8 @@ type Tab = 'menu' | 'costos' | 'calculator' | 'preview' | 'export' | 'reservas' 
 function AdminApp() {
   const [activeTab, setActiveTab] = useState<Tab>('menu');
   const menuData = useMenuData();
-  const { settings, loading: settingsLoading, updateSettings } = useSettings();
-  const { logout, changePassword } = useAuth();
+  const { token, logout, changePassword } = useAuth();
+  const { settings, loading: settingsLoading, updateSettings } = useSettings(token);
 
   const tabs = [
     { id: 'menu' as Tab, label: 'Menú', icon: UtensilsCrossed },
@@ -146,7 +146,7 @@ function AdminApp() {
           />
         )}
 
-        {activeTab === 'reservas' && <ReservationsManager />}
+        {activeTab === 'reservas' && <ReservationsManager token={token} />}
 
         {activeTab === 'config' && (
           <SettingsManager

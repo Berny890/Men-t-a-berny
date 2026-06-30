@@ -38,8 +38,12 @@ interface Order {
   createdAt: string;
 }
 
-export const ReservationsManager = () => {
-  const { reservations, loading, load, updateStatus, deleteReservation } = useReservations();
+interface ReservationsManagerProps {
+  token: string | null;
+}
+
+export const ReservationsManager = ({ token }: ReservationsManagerProps) => {
+  const { reservations, loading, load, updateStatus, deleteReservation } = useReservations(token);
   const [filter, setFilter] = useState<ReservationStatus | 'all'>('all');
 
   useEffect(() => { load(); }, [load]);
@@ -99,6 +103,12 @@ export const ReservationsManager = () => {
             <RefreshCw size={14} style={{ animation: loading ? 'spin 0.8s linear infinite' : 'none' }} />
             Actualizar
           </button>
+        </div>
+
+        <div style={{ padding: '10px 24px', background: '#fdf6ec', borderBottom: '1px solid #e8d5c0' }}>
+          <p style={{ fontSize: '11.5px', color: '#7a5c4e', margin: 0 }}>
+            Los datos de los clientes se eliminan automáticamente a los 30 días de recibido el pedido.
+          </p>
         </div>
 
         {/* Filtro */}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'react-router';
+import { useParams, useSearchParams, Link } from 'react-router';
 import { CalendarDays, Lock, UtensilsCrossed, CheckCircle, Plus, Trash2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -361,6 +361,16 @@ export default function ReservationPage() {
           >
             Reservar
           </button>
+        </div>
+
+        {/* Footer de privacidad */}
+        <div style={{ textAlign: 'center', marginTop: '20px', padding: '0 12px' }}>
+          <p style={{ fontSize: '11.5px', color: '#a89580', lineHeight: '1.6', margin: 0 }}>
+            Tus datos se usan solo para gestionar este pedido y se eliminan automáticamente a los 30 días.{' '}
+            <Link to="/privacidad" style={{ color: '#8b2635', textDecoration: 'underline' }}>
+              Ver política de privacidad
+            </Link>
+          </p>
         </div>
       </div>
 

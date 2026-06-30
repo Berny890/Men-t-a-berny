@@ -31,30 +31,31 @@ const fromRow = (row: Record<string, unknown>): Reservation => ({
   createdAt: row.created_at as string,
 });
 
-export const useReservations = () => {
+export const useReservations = (token: string | null) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
+    if (!token) return;
     setLoading(true);
-    const { data } = await supabase
-      .from('reservations')
-      .select('*')
-      .order('created_at', { ascending: false });
+    await supabase.rpc('cleanup_old_reservations');
+    const { data } = await supabase.rpc('get_reservations', { session_token: token });
     setReservations((data || []).map(fromRow));
     setLoading(false);
-  }, []);
+  }, [token]);
 
   const updateStatus = async (ids: string[], status: ReservationStatus) => {
+    if (!token) return;
     setReservations((prev) =>
       prev.map((r) => (ids.includes(r.id) ? { ...r, status } : r))
     );
-    await supabase.from('reservations').update({ status }).in('id', ids);
+    await supabase.rpc('update_reservation_status', { session_token: token, ids, new_status: status });
   };
 
   const deleteReservation = async (ids: string[]) => {
+    if (!token) return;
     setReservations((prev) => prev.filter((r) => !ids.includes(r.id)));
-    await supabase.from('reservations').delete().in('id', ids);
+    await supabase.rpc('delete_reservations', { session_token: token, ids });
   };
 
   return { reservations, loading, load, updateStatus, deleteReservation };

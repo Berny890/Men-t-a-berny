@@ -1,22 +1,22 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
-const STORAGE_KEY = 'menu_admin_unlocked';
+const STORAGE_KEY = 'menu_admin_session';
 
 export const useAuth = () => {
-  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem(STORAGE_KEY) === 'true');
+  const [token, setToken] = useState<string | null>(() => sessionStorage.getItem(STORAGE_KEY));
 
   const login = useCallback(async (password: string): Promise<boolean> => {
-    const { data, error } = await supabase.rpc('verify_admin_password', { input: password });
+    const { data, error } = await supabase.rpc('create_admin_session', { input: password });
     if (error || !data) return false;
-    sessionStorage.setItem(STORAGE_KEY, 'true');
-    setUnlocked(true);
+    sessionStorage.setItem(STORAGE_KEY, data);
+    setToken(data);
     return true;
   }, []);
 
   const logout = useCallback(() => {
     sessionStorage.removeItem(STORAGE_KEY);
-    setUnlocked(false);
+    setToken(null);
   }, []);
 
   const changePassword = useCallback(async (oldPassword: string, newPassword: string): Promise<boolean> => {
@@ -25,5 +25,5 @@ export const useAuth = () => {
     return Boolean(data);
   }, []);
 
-  return { unlocked, login, logout, changePassword };
+  return { unlocked: Boolean(token), token, login, logout, changePassword };
 };

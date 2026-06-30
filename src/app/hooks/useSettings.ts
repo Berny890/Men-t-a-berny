@@ -10,6 +10,7 @@ export interface Settings {
   baseUrl: string;
   whatsappNumber: string;
   whatsappMessageTemplate: string;
+  privacyContact: string;
 }
 
 export const WHATSAPP_DEFAULT_TEMPLATE =
@@ -22,6 +23,7 @@ const DEFAULTS: Settings = {
   baseUrl: '',
   whatsappNumber: '',
   whatsappMessageTemplate: WHATSAPP_DEFAULT_TEMPLATE,
+  privacyContact: '',
 };
 
 const KEY_MAP: Record<keyof Settings, string> = {
@@ -31,9 +33,10 @@ const KEY_MAP: Record<keyof Settings, string> = {
   baseUrl: 'base_url',
   whatsappNumber: 'whatsapp_number',
   whatsappMessageTemplate: 'whatsapp_message_template',
+  privacyContact: 'privacy_contact',
 };
 
-export const useSettings = () => {
+export const useSettings = (token: string | null) => {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [loading, setLoading] = useState(true);
 
@@ -51,6 +54,7 @@ export const useSettings = () => {
         baseUrl: map['base_url'] ?? DEFAULTS.baseUrl,
         whatsappNumber: map['whatsapp_number'] ?? DEFAULTS.whatsappNumber,
         whatsappMessageTemplate: map['whatsapp_message_template'] ?? DEFAULTS.whatsappMessageTemplate,
+        privacyContact: map['privacy_contact'] ?? DEFAULTS.privacyContact,
       });
     }
     setLoading(false);
@@ -61,13 +65,14 @@ export const useSettings = () => {
   const updateSettings = async (updates: Partial<Settings>) => {
     const next = { ...settings, ...updates };
     setSettings(next);
+    if (!token) return;
     const rows = (Object.keys(updates) as (keyof Settings)[]).map((k) => ({
       key: KEY_MAP[k],
       value: String(next[k]),
     }));
     await Promise.all(
       rows.map((row) =>
-        supabase.from('settings').upsert(row, { onConflict: 'key' })
+        supabase.rpc('update_setting', { session_token: token, p_key: row.key, p_value: row.value })
       )
     );
   };

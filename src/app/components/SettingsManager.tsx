@@ -39,6 +39,7 @@ export const SettingsManager = ({ settings, loading, updateSettings, changePassw
   const [portions, setPortions] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [whatsappTemplate, setWhatsappTemplate] = useState('');
+  const [privacyContact, setPrivacyContact] = useState('');
 
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -54,6 +55,7 @@ export const SettingsManager = ({ settings, loading, updateSettings, changePassw
       setPortions(settings.menuPortions);
       setWhatsappNumber(settings.whatsappNumber);
       setWhatsappTemplate(settings.whatsappMessageTemplate);
+      setPrivacyContact(settings.privacyContact);
     }
   }, [loading, settings]);
 
@@ -90,6 +92,7 @@ export const SettingsManager = ({ settings, loading, updateSettings, changePassw
       menuPortions: portions,
       whatsappNumber: whatsappNumber.replace(/[^\d]/g, ''),
       whatsappMessageTemplate: whatsappTemplate,
+      privacyContact: privacyContact.trim(),
     });
     setSaving(false);
     setSaved(true);
@@ -259,6 +262,18 @@ export const SettingsManager = ({ settings, loading, updateSettings, changePassw
             <input
               type="text" value={portions}
               onChange={(e) => setPortions(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>Contacto para privacidad de datos</label>
+            <p style={{ fontSize: '12px', color: '#7a5c4e', margin: '0 0 8px' }}>
+              Correo o WhatsApp que verán los clientes en la política de privacidad para ejercer sus derechos sobre sus datos. Ej: "correo@ejemplo.com" o "WhatsApp +56 9 1234 5678"
+            </p>
+            <input
+              type="text" value={privacyContact} placeholder="correo@ejemplo.com"
+              onChange={(e) => setPrivacyContact(e.target.value)}
               style={inputStyle}
             />
           </div>
