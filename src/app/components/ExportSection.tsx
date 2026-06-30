@@ -131,6 +131,10 @@ export const ExportSection = ({ categories, dishes, getDishesByCategory, menuMod
       alert('No hay platos para exportar. Agrega platos al menú primero.');
       return;
     }
+    if (menuMode === 'whatsapp' && !whatsappNumber.trim()) {
+      alert('Falta el número de WhatsApp. Ve a Configuración, ingresa el número y presiona "Guardar cambios" antes de exportar.');
+      return;
+    }
     setShowModal(true);
   };
 
@@ -152,6 +156,16 @@ export const ExportSection = ({ categories, dishes, getDishesByCategory, menuMod
       <div className="px-6 py-4 flex items-center gap-2" style={{ background: '#f5e6d3', borderBottom: '1px solid #e8d5c0' }}>
         <Download size={18} style={{ color: '#8b2635' }} />
         <h2 className="font-semibold" style={{ color: '#2c1810' }}>Exportación</h2>
+      </div>
+
+      <div className="px-6 pt-5">
+        <div className="text-xs px-4 py-2.5 rounded-xl flex items-center gap-2"
+          style={{ background: '#fdf6ec', border: '1px solid #e8d5c0', color: '#7a5c4e' }}>
+          <span style={{ fontWeight: 'bold', color: '#2c1810' }}>Modo activo:</span>
+          {menuMode === 'simple' && 'Menú simple (sin links en los platos)'}
+          {menuMode === 'reservations' && 'Sistema de reservas'}
+          {menuMode === 'whatsapp' && (whatsappNumber ? `WhatsApp directo → +${whatsappNumber}` : 'WhatsApp directo (falta configurar el número)')}
+        </div>
       </div>
 
       <div className="p-6 grid md:grid-cols-2 gap-5">
